@@ -44,10 +44,10 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
+
 	const Hero = __webpack_require__(1);
-	const handleInput = __webpack_require__(3);
 	const Monster = __webpack_require__(4);
+	const handleInput = __webpack_require__(2);
 
 	// Create the canvas
 	var canvas = document.createElement("canvas");
@@ -94,12 +94,12 @@
 
 		});
 
-		// Score
+	  // Score
 		ctx.fillStyle = "rgb(0, 0, 0)";
 		ctx.font = "30px Arial";
 		ctx.textAlign = "left";
 		ctx.textBaseline = "top";
-		ctx.fontColor = "black";
+	  ctx.fontColor = "black";
 		ctx.fillText("DEMO", 10, 32);
 		ctx.fillText("arrow keys to move", 10, 62);
 		ctx.fillText("spacebar: shakes ass", 10, 92);
@@ -170,7 +170,7 @@
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	const Moveable = __webpack_require__(2);
+	const Moveable = __webpack_require__(3);
 
 	class Hero extends Moveable {
 	  constructor(obj) {
@@ -188,7 +188,7 @@
 	    this.animTimer = 0;
 	    this.imageReady = false;
 	    this.image = new Image();
-	    this.image.src = "/Users/Eihcir0/Desktop/my_little_rpg/images/hero_sheet.png";
+	    this.image.src = "/Users/Eihcir0/Desktop/sprite_game/images/hero_sheet.png";
 	    this.image.onload = () => (this.imageReady = true);
 
 	    this.posCenter();
@@ -201,6 +201,61 @@
 
 /***/ },
 /* 2 */
+/***/ function(module, exports) {
+
+	const handleInput = function (hero, keysDown) {
+
+		// Stop moving the hero
+		hero.stop();
+		if (hero.shakingAss) {hero.face("N");}
+
+
+		if (37 in keysDown) { // Left
+			hero.face("W");
+		}
+
+		if (38 in keysDown) { // Up
+			hero.face("N");
+		}
+
+		if (32 in keysDown) { // space
+	    hero.shakeAssOn();
+
+		}
+
+		if (39 in keysDown) { // Right
+			hero.face("E");
+		}
+
+		if (40 in keysDown) { // Down
+			hero.face("S");
+		}
+
+		if (38 in keysDown && 39 in keysDown) { // Up/Right
+			hero.face("NE");
+		}
+
+		if (38 in keysDown && 37 in keysDown) { // Up/Left
+			hero.face("NW");
+		}
+
+		if (40 in keysDown && 39 in keysDown) { // Down/Right
+			hero.face("SE");
+		}
+
+		if (40 in keysDown && 37 in keysDown) { // Down/Left
+			hero.face("SW");
+		}
+
+
+
+	};
+
+	module.exports = handleInput;
+
+
+/***/ },
+/* 3 */
 /***/ function(module, exports) {
 
 	const MOVES = {
@@ -253,9 +308,9 @@
 	    let x = this.directionVector[0];
 	    let y = this.directionVector[1];
 	    Object.keys(MOVES).forEach((key) => {
-	      if (MOVES[key][0]===x && MOVES[key][1]===y) {
-	        this.direction = key;
-	      }
+		    if (MOVES[key][0]===x && MOVES[key][1]===y) {
+			    this.direction = key;
+		    }
 	    });
 
 	  }
@@ -328,8 +383,8 @@
 	    }
 
 
-	    newPos[0] += Math.round(move *  this.directionVector[0]);
-	    newPos[1] += Math.round(move * speedFactor * this.directionVector[1]);
+	  	newPos[0] += Math.round(move *  this.directionVector[0]);
+	  	newPos[1] += Math.round(move * speedFactor * this.directionVector[1]);
 
 	    this.pos = newPos;
 	    this.preventOutOfBounds();
@@ -352,65 +407,10 @@
 
 
 /***/ },
-/* 3 */
-/***/ function(module, exports) {
-
-	const handleInput = function (hero, keysDown) {
-
-		// Stop moving the hero
-		hero.stop();
-		if (hero.shakingAss) {hero.face("N");}
-
-
-		if (37 in keysDown) { // Left
-			hero.face("W");
-		}
-
-		if (38 in keysDown) { // Up
-			hero.face("N");
-		}
-
-		if (32 in keysDown) { // space
-	    hero.shakeAssOn();
-
-		}
-
-		if (39 in keysDown) { // Right
-			hero.face("E");
-		}
-
-		if (40 in keysDown) { // Down
-			hero.face("S");
-		}
-
-		if (38 in keysDown && 39 in keysDown) { // Up/Right
-			hero.face("NE");
-		}
-
-		if (38 in keysDown && 37 in keysDown) { // Up/Left
-			hero.face("NW");
-		}
-
-		if (40 in keysDown && 39 in keysDown) { // Down/Right
-			hero.face("SE");
-		}
-
-		if (40 in keysDown && 37 in keysDown) { // Down/Left
-			hero.face("SW");
-		}
-
-
-
-	};
-
-	module.exports = handleInput;
-
-
-/***/ },
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	const Moveable = __webpack_require__(2);
+	const Moveable = __webpack_require__(3);
 
 	class Monster extends Moveable {
 	  constructor(obj) {
@@ -428,7 +428,7 @@
 	    this.animTimer = 0;
 	    this.imageReady = false;
 	    this.image = new Image();
-	    this.image.src = "/Users/Eihcir0/Desktop/my_little_rpg/images/monster.png";
+	    this.image.src = "/Users/Eihcir0/Desktop/sprite_game/images/monster.png";
 	    this.image.onload = () => (this.imageReady = true);
 
 	  }
