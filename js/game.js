@@ -2,16 +2,18 @@
 const Hero = require('./hero.js');
 const handleInput = require('./handle_input.js');
 const Monster = require('./monster.js');
+const Coin = require('./coin.js');
+
+var w = window;
+requestAnimationFrame = w.webkitRequestAnimationFrame
+|| w.msRequestAnimationFrame || w.mozRequestAnimationFrame;
 
 // Create the canvas
 var canvas = document.createElement("canvas");
 canvas.width = 812;
 canvas.height = 512;
 document.body.appendChild(canvas);
-
-// Grab a reference to the canvas 2D context
 var ctx = canvas.getContext("2d");
-// Create the canvas
 
 
 
@@ -24,29 +26,30 @@ var render = function () {
 	ctx.fillRect(0,0, 330, 512);
 
 	// Draw hero
-	moveable.forEach(moveable => {
-		if (moveable.imageReady) {
-
-			// Determine which part of the sprite sheet to draw from
-
-
-			// Render image to canvas
-			ctx.drawImage(
-				moveable.image,
-				moveable.currentSprite(), 0, moveable.width, moveable.height,
-				moveable.pos[0], moveable.pos[1], moveable.width,
-				moveable.height
-			);
+	ctx.drawImage(
+		hero.image,
+		hero.currentSprite(), 0, hero.width, hero.height,
+		hero.pos[0], hero.pos[1], hero.width,
+		hero.height
+	);
 
 
-		} else {
-			// Image not ready. Draw a gray box
-			ctx.fillStyle = "rgb(100, 100, 100)";
-			ctx.fillRect(moveable.pos[0], moveable.pos[1],
-				moveable.width, moveable.height);
-		}
+	ctx.drawImage(
+		monster.image,
+		monster.currentSprite(), 0, monster.width, monster.height,
+		monster.pos[0], monster.pos[1], monster.width,
+		monster.height
+	);
 
-	});
+	for (var i = 0; i < coins.length; i++) {
+		let coin = coins[i];
+
+	ctx.drawImage(
+		coin.image,
+		coin.currentSprite(), 0, coin.width, coin.height,
+		coin.pos[0], coin.pos[1], coin.width,
+		coin.height
+	);}
 
 	// Score
 	ctx.fillStyle = "rgb(0, 0, 0)";
@@ -58,6 +61,7 @@ var render = function () {
 	ctx.fillText("arrow keys to move", 10, 62);
 	ctx.fillText("spacebar: shakes ass", 10, 92);
 	ctx.fillText("Monsters caught: " + monstersCaught, 10, 132);
+	ctx.fillText("Coins: " + coinsTaken, 10, 152);
 
 };
 // Main game loop
@@ -65,13 +69,22 @@ var main = function () {
 	// Calculate time since last frame
 	var now = Date.now();
 	var delta = (now - last);
-	moveable.forEach(moveable => moveable.update(delta));
+	var newCoins = coins.slice(0);
+	for (var i = 0; i < coins.length; i++) {
+		coins[i].update(delta);
+		if (coins[i].done) {
+			newCoins.splice(i,1);
+		}
+	coins = newCoins;
+	}
+	hero.update(delta);
+	monster.update(delta);
 
 	handleInput(hero, keysDown);
 
-	// Render to the screen
 	last = now;
 	render();
+		// replace below with collision detection
 	if (
 		hero.pos[0] <= (monster.pos[0] + 32)
 		&& monster.pos[0] <= (hero.pos[0] + 32)
@@ -79,24 +92,48 @@ var main = function () {
 		&& monster.pos[1] <= (hero.pos[1] + 32)
 	) {
 		++monstersCaught;
+		monster.sound.play();
 		monster.pos = [(Math.random()*(canvas.width - 312))+312,
 			(Math.random()*(canvas.height)) ];
 	}
-	// setTimeout(() => (requestAnimationFrame(main)), 70);
+
+	for (var i = 0; i < coins.length; i++) {
+		let coin = coins[i];
+		if (
+			hero.pos[0] <= (coin.pos[0] + 32)
+			&& coin.pos[0] <= (hero.pos[0] + 32)
+			&& hero.pos[1] <= (coin.pos[1] + 32)
+			&& coin.pos[1] <= (hero.pos[1] + 32)
+			&& (!coin.taken)
+		) {
+			coin.taken = true;
+			coin.sound.play();
+			++coinsTaken;
+		}
+		}
+
+
+	requestAnimationFrame(main);
 
 };
 
 // Start the main game loop!
 var hero = new Hero({name: "Johnny", boardDimensions: [[332,0],[812,512]]});
+var monsters = [];
+var coins = [];
 var monster = new Monster({pos: [350,200],
 	boardDimensions: [[332,0],[812,512]]});
-
-var moveable = [];
-moveable.push(hero);
-moveable.push(monster);
+monsters.push(monster);
+for (var i = 0; i < 10; i++) {
+	var coin = new Coin({ boardDimensions: [[332,0],[812,512]]});
+	coin.pos = [(Math.random()*(canvas.width - 312))+312,
+		(Math.random()*(canvas.height)) ];
+	coins.push(coin);
+}
 var last = Date.now();
 var keysDown = {};
 var monstersCaught = 0;
+var coinsTaken = 0;
 addEventListener("keydown", function (e) {
 	keysDown[e.keyCode] = true;
 }, false);
@@ -104,17 +141,10 @@ addEventListener("keydown", function (e) {
 addEventListener("keyup", function (e) {
 	if (e.keyCode === 32) {
 		hero.directionVector = [0,0];
+		hero.animDelay = 200;
 		hero.updateDirection();
 		hero.shakeAssOff();
 	}
 	delete keysDown[e.keyCode];
 }, false);
-setInterval(main, 1);
-
-
-
-
-// var w = window;
-// requestAnimationFrame = w.webkitRequestAnimationFrame
-// || w.msRequestAnimationFrame || w.mozRequestAnimationFrame;
-// main();
+main();

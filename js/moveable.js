@@ -28,16 +28,6 @@ class Moveable {
     this.pos = [xxx,yyy];
   }
 
-  shakeAssOn() {
-    this.shakingAss = true;
-    this.directionVector = [0,0];
-  }
-
-  shakeAssOff() {
-    this.shakingAss = false;
-    this.directionVector = [0,0];
-    this.animSet = 4;
-  }
 
 
   stop() {
@@ -55,11 +45,6 @@ class Moveable {
 
   }
 
-  face(dir) {
-    this.directionVector = MOVES[dir];
-    this.updateDirection();
-    this.updateAnimSet();
-  }
 
   currentSprite() {
     return (
@@ -94,21 +79,6 @@ class Moveable {
     this.move(elapsed);
 
   }
-
-  updateAnim(elapsed) {
-    this.updateDirection();
-    this.animTimer += elapsed;
-    if (this.animTimer >= this.animDelay) {
-      this.animTimer = 0;}
-    if (this.direction!=="STOP" || this.shakingAss) {
-          ++this.animFrame;
-
-        if (this.animFrame >= this.animNumFrames) {
-          this.animFrame = 0;
-        }
-      }
-    }
-
 
 
   move(elapsed) {
