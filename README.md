@@ -1,3 +1,5 @@
+See it live here! https://eihcir0.github.io/my_little_rpg/
+
 For my Javascript project I will be creating an RPG game called, "My Little RPG"
 
 MVP:
