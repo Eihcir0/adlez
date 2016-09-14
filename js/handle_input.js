@@ -2,46 +2,49 @@ const handleInput = function (hero, keysDown) {
 
 	// Stop moving the hero
 	hero.stop();
-	if (hero.shakingAss) {hero.face("N");}
+	// if (hero.shakingAss) {hero.face("N");}
 
+	if (83 in keysDown) { // S
+		hero.shakeAssOn();
+
+	}
 
 	if (37 in keysDown) { // Left
-		hero.face("W");
+		hero.go("W");
 	}
 
 	if (38 in keysDown) { // Up
-		hero.face("N");
+		hero.go("N");
 	}
 
-	if (32 in keysDown) { // space
-    hero.shakeAssOn();
-
-	}
 
 	if (39 in keysDown) { // Right
-		hero.face("E");
+		hero.go("E");
 	}
 
+
 	if (40 in keysDown) { // Down
-		hero.face("S");
+		hero.go("S");
 	}
 
 	if (38 in keysDown && 39 in keysDown) { // Up/Right
-		hero.face("NE");
+		hero.go("NE");
 	}
 
 	if (38 in keysDown && 37 in keysDown) { // Up/Left
-		hero.face("NW");
+		hero.go("NW");
 	}
 
 	if (40 in keysDown && 39 in keysDown) { // Down/Right
-		hero.face("SE");
+		hero.go("SE");
 	}
 
 	if (40 in keysDown && 37 in keysDown) { // Down/Left
-		hero.face("SW");
+		hero.go("SW");
 	}
-
+	if (32 in keysDown) { // space
+		hero.newFireball = true;
+	}
 
 
 };

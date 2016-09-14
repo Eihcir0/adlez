@@ -1,77 +1,49 @@
-const MOVES = {
-  "N"    : [ 0,-1],
-  "S"    : [ 0, 1],
-  "E"    : [ 1, 0],
-  "W"    : [-1, 0],
-  "NE"   : [ 1,-1],
-  "NW"   : [-1,-1],
-  "SE"   : [ 1, 1],
-  "SW"   : [-1, 1],
-  "STOP" : [ 0, 0]
-};
-
-const DIAGS = ["NE","NW","SE","SW"];
 
 class Moveable {
-  constructor(obj = {boardDimensions: [[332,0],[812,512]]}) {
-    this.boardDimensions = obj.boardDimensions;
-    this.boardWidth = this.boardDimensions[1][0] - this.boardDimensions[0][0];
-    this.boardHeight = this.boardDimensions[1][1] - this.boardDimensions[0][1];
+  constructor(obj) {
 
+    this.board = obj.board;
+    this.boardDimensions = this.board.boardDimensions;
+    this.MOVES = {
+      "N"    : [ 0,-1],
+      "S"    : [ 0, 1],
+      "E"    : [ 1, 0],
+      "W"    : [-1, 0],
+      "NE"   : [ 1,-1],
+      "NW"   : [-1,-1],
+      "SE"   : [ 1, 1],
+      "SW"   : [-1, 1],
+      "STOP" : [ 0, 0]
+      };
+    this.DIAGS = ["NE","NW","SE","SW"];
+    this.ctx = this.board.ctx;
+    this.canvas = this.board.canvas;
+    this.lastDir = "S";
+    this.animationOn = true;
+    this.movementOn = true;
+    this.done = false;
   }
 
-
-  posCenter() {
-    var xxx = Math.floor((this.boardDimensions[1][0] / 2)
-    + 166 - (this.width / 2));
-    var yyy = Math.floor((this.boardHeight / 2) - (this.width / 2));
-    this.pos = [xxx,yyy];
-  }
-
-
-
-  stop() {
-    this.directionVector = [0,0];
-  }
-
-  updateDirection() {
-    let x = this.directionVector[0];
-    let y = this.directionVector[1];
-    Object.keys(MOVES).forEach((key) => {
-      if (MOVES[key][0]===x && MOVES[key][1]===y) {
-        this.direction = key;
-      }
-    });
-
-  }
-
-
-  currentSprite() {
+  currentSprite() { //this is really just the X offset calc'd
     return (
       (this.animSet * (this.width * this.animNumFrames)) +
       (this.animFrame * this.width)
     );
   }
 
-  updateAnimSet() {  //should refactor this with a const array
-    let d = this.direction;
-    if (d === "N") {
-      this.animSet = 0;
-    } else if (d === "NE") {
-      this.animSet = 1;
-    } else if (d === "E") {
-      this.animSet = 2;
-    } else if (d==="SE") {
-      this.animSet = 3;
-    } else if (d==="S" || d==="STOP") {
-      this.animSet = 4;
-    } else if (d==="SW") {
-      this.animSet = 5;
-    } else if (d==="W") {
-      this.animSet = 6;
-    } else if (d==="NW") {
-      this.animSet = 7;
-    }
+  stop() {
+    if (this.facing !== "STOP") {
+    this.lastDir = this.facing;}
+    this.facing = "STOP";
+    this.animationOn = false;
+
+  }
+
+  go(dir) {
+    this.facing = dir;
+    this.animationOn = true;
+    this.speed = this.Maxspeed;
+    this.updateAnimSet();
   }
 
   update(elapsed) {
@@ -80,24 +52,69 @@ class Moveable {
 
   }
 
+  updateAnim(elapsed) {
+    if (this.animationOn) {
+      this.animTimer += elapsed;
+
+      if (this.animTimer >= this.animDelay) {
+        if (this.automover) {
+          ++this.currentMovement;
+
+          if (this.currentMovement >= this.numMovements - 1) {
+            this.currentMovement = 0;
+          }
+          this.facing = (this.movements[this.currentMovement]);
+
+        }
+
+        this.animTimer = 0;
+        ++this.animFrame;
+        if (this.done) {
+          this.pos[1] -= 3;
+          if (this.animFrame >= this.animNumFrames) {
+            this.done = true;
+          }
+        }
+        if (this.animFrame >= this.animNumFrames) {
+            this.animFrame = 0;
+          }
+
+      }
+    }
+  }
+
+
 
   move(elapsed) {
     let newPos = this.pos;
-    var move = (this.speed * (elapsed / 1000));
-    let speedFactor;
+    if (this.movementOn) {
+      var move = (this.speed * (elapsed / 1000));
+      let speedFactor;
 
-    if (DIAGS.includes(this.direction)) { //reduce diag velocity
-      speedFactor = 0.75;
-    } else {
-      speedFactor=1;
+      if (this.DIAGS.includes(this.facing)) { //reduce diag velocity
+        speedFactor = 0.75;
+      } else {
+        speedFactor=1;
+      }
+      newPos[0] += Math.round(move *  this.MOVES[this.facing][0]);
+      newPos[1] += Math.round(move * speedFactor * this.MOVES[this.facing][1]);
     }
-
-
-    newPos[0] += Math.round(move *  this.directionVector[0]);
-    newPos[1] += Math.round(move * speedFactor * this.directionVector[1]);
-
     this.pos = newPos;
-    this.preventOutOfBounds();
+  }
+
+  render() {
+
+    this.ctx.drawImage(
+		this.image,
+		this.currentSprite(),
+    this.spriteYoffset*this.height,
+    this.width,
+    this.height,
+		this.pos[0],
+    this.pos[1],
+    this.width,
+		this.height
+	);
   }
 
   preventOutOfBounds() {
@@ -110,6 +127,19 @@ class Moveable {
     this.pos[1] = Math.max(this.pos[1], northern);
     this.pos[1] = Math.min(this.pos[1], southern);
   }
+
+  isOutOfBounds() {
+    let northern = this.boardDimensions[0][1];
+    let western = this.boardDimensions[0][0];
+    let southern = this.boardDimensions[1][1] - this.height;
+    let eastern = this.boardDimensions[1][0] - this.width;
+    return (
+      this.pos[0]< western ||
+      this.pos[0]> eastern ||
+      this.pos[1]< northern ||
+      this.pos[1]> southern);
+  }
+
 
 } //end class
 

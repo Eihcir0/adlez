@@ -1,150 +1,209 @@
-
+const Board = require('./board.js');
 const Hero = require('./hero.js');
-const handleInput = require('./handle_input.js');
-const Monster = require('./monster.js');
+const Fireball = require('./fireball.js');
+const skullGuy = require('./skull_guy.js');
+const Greeny = require('./greeny.js');
 const Coin = require('./coin.js');
 
-var w = window;
-requestAnimationFrame = w.webkitRequestAnimationFrame
-|| w.msRequestAnimationFrame || w.mozRequestAnimationFrame;
+class Game {
+  constructor(obj) {
+    this.ctx = obj.ctx;
+    this.canvas = obj.canvas;
+    this.boardDimensions = obj.boardDimensions;
 
-// Create the canvas
-var canvas = document.createElement("canvas");
-canvas.width = 812;
-canvas.height = 512;
-document.body.appendChild(canvas);
-var ctx = canvas.getContext("2d");
+    this.board = new Board({id: 1, ctx: this.ctx, canvas: this.canvas, boardDimensions: this.boardDimensions});
 
+    this.hero = new Hero({board: this.board, pos: this.board.posCenter()});
 
+    this.monsters = [];
+    this.monsters.push(new skullGuy({board: this.board, pos: [100,100]}));
+    this.monsters.push(new Greeny({board: this.board, pos: [200,100]}));
 
-var render = function () {
-
-	// Draw a green background. Pretend it's grass
-	ctx.fillStyle = "rgb(51, 118, 36)";
-	ctx.fillRect(330, 0, canvas.width, canvas.height);
-	ctx.fillStyle = "rgb(250, 250, 250)";
-	ctx.fillRect(0,0, 330, 512);
-
-	// Draw hero
-	ctx.drawImage(
-		hero.image,
-		hero.currentSprite(), 0, hero.width, hero.height,
-		hero.pos[0], hero.pos[1], hero.width,
-		hero.height
-	);
+    this.coins = [];
+    for (var i = 0; i < 10; i++) {
+	     var coin = new Coin({board: this.board});
+	      coin.pos = [(Math.random()*(this.canvas.width)),
+		    (Math.random()*(this.canvas.height)) ];
+	      this.coins.push(coin);
+    }
 
 
-	ctx.drawImage(
-		monster.image,
-		monster.currentSprite(), 0, monster.width, monster.height,
-		monster.pos[0], monster.pos[1], monster.width,
-		monster.height
-	);
 
-	for (var i = 0; i < coins.length; i++) {
-		let coin = coins[i];
+    this.fireballs = [];
 
-	ctx.drawImage(
-		coin.image,
-		coin.currentSprite(), 0, coin.width, coin.height,
-		coin.pos[0], coin.pos[1], coin.width,
-		coin.height
-	);}
+  }
 
-	// Score
-	ctx.fillStyle = "rgb(0, 0, 0)";
-	ctx.font = "30px Arial";
-	ctx.textAlign = "left";
-	ctx.textBaseline = "top";
-	ctx.fontColor = "black";
-	ctx.fillText("DEMO", 10, 32);
-	ctx.fillText("arrow keys to move", 10, 62);
-	ctx.fillText("spacebar: shakes ass", 10, 92);
-	ctx.fillText("Monsters caught: " + monstersCaught, 10, 132);
-	ctx.fillText("Coins: " + coinsTaken, 10, 152);
-
-};
-// Main game loop
-var main = function () {
-	// Calculate time since last frame
-	var now = Date.now();
-	var delta = (now - last);
-	var newCoins = coins.slice(0);
-	for (var i = 0; i < coins.length; i++) {
-		coins[i].update(delta);
-		if (coins[i].done) {
-			newCoins.splice(i,1);
-		}
-	coins = newCoins;
-	}
-	hero.update(delta);
-	monster.update(delta);
-
-	handleInput(hero, keysDown);
-
-	last = now;
-	render();
-		// replace below with collision detection
-	if (
-		hero.pos[0] <= (monster.pos[0] + 32)
-		&& monster.pos[0] <= (hero.pos[0] + 32)
-		&& hero.pos[1] <= (monster.pos[1] + 32)
-		&& monster.pos[1] <= (hero.pos[1] + 32)
-	) {
-		++monstersCaught;
-		monster.sound.play();
-		monster.pos = [(Math.random()*(canvas.width - 312))+312,
-			(Math.random()*(canvas.height)) ];
-	}
-
-	for (var i = 0; i < coins.length; i++) {
-		let coin = coins[i];
-		if (
-			hero.pos[0] <= (coin.pos[0] + 32)
-			&& coin.pos[0] <= (hero.pos[0] + 32)
-			&& hero.pos[1] <= (coin.pos[1] + 32)
-			&& coin.pos[1] <= (hero.pos[1] + 32)
-			&& (!coin.taken)
-		) {
-			coin.taken = true;
-			coin.sound.play();
-			++coinsTaken;
-		}
-		}
+  update(dt) {
+    this.hero.update(dt);
+    this.updateFireballs(dt);
+    this.updateMonsters(dt);
+    this.updateCoins(dt);
+    this.collsionCheckFireballs();
+    this.collsionCheckCoins();
+    // this.collsionCheckMonsters();
+  }
 
 
-	requestAnimationFrame(main);
 
-};
 
-// Start the main game loop!
-var hero = new Hero({name: "Johnny", boardDimensions: [[332,0],[812,512]]});
-var monsters = [];
-var coins = [];
-var monster = new Monster({pos: [350,200],
-	boardDimensions: [[332,0],[812,512]]});
-monsters.push(monster);
-for (var i = 0; i < 10; i++) {
-	var coin = new Coin({ boardDimensions: [[332,0],[812,512]]});
-	coin.pos = [(Math.random()*(canvas.width - 312))+312,
-		(Math.random()*(canvas.height)) ];
-	coins.push(coin);
-}
-var last = Date.now();
-var keysDown = {};
-var monstersCaught = 0;
-var coinsTaken = 0;
-addEventListener("keydown", function (e) {
-	keysDown[e.keyCode] = true;
-}, false);
+  render () {
 
-addEventListener("keyup", function (e) {
-	if (e.keyCode === 32) {
-		hero.directionVector = [0,0];
-		hero.animDelay = 200;
-		hero.updateDirection();
-		hero.shakeAssOff();
-	}
-	delete keysDown[e.keyCode];
-}, false);
-main();
+    this.board.render();
+
+    this.hero.render();
+
+    for (var i = 0; i < this.fireballs.length; i++) {
+      this.fireballs[i].render();
+    }
+
+    for (var j = 0; j < this.monsters.length; j++) {
+      this.monsters[j].render();
+    }
+
+    for (var k = 0; k < this.coins.length; k++) {
+      this.coins[k].render();
+    }
+  }
+
+  updateFireballs(dt) {
+    if (this.hero.newFireball) {
+      this.addFireball();}
+
+    var tempFireballs = this.fireballs.slice(0);
+    for (var i = 0; i < this.fireballs.length; i++) {
+      if (this.fireballs[i].isOutOfBounds() || this.fireballs[i].done) {
+        tempFireballs.splice(i,1);
+      }
+    }
+    this.fireballs = tempFireballs;
+    for (var j = 0; j < this.fireballs.length; j++) {
+      this.fireballs[j].update(dt);
+    }
+
+  }
+
+  updateMonsters(dt) {
+
+    var tempMonsters = this.monsters.slice(0);
+    for (var i = 0; i < this.monsters.length; i++) {
+      if (this.monsters[i].done) {
+        tempMonsters.splice(i,1);
+      }
+    }
+    this.monsters = tempMonsters;
+    for (var j = 0; j < this.monsters.length; j++) {
+      this.monsters[j].update(dt);
+      this.monsters[j].preventOutOfBounds();
+    }
+
+  }
+  updateCoins(dt) {
+
+    var tempCoins = this.coins.slice(0);
+    for (var i = 0; i < this.coins.length; i++) {
+      if (this.coins[i].done) {
+        tempCoins.splice(i,1);
+      }
+    }
+    this.coins = tempCoins;
+    for (var j = 0; j < this.coins.length; j++) {
+      this.coins[j].update(dt);
+    }
+
+  }
+
+  addFireball() {
+    this.hero.newFireball = false;
+    var now = Date.now();
+    if (now - this.hero.lastFireball > this.hero.fireballDelay) {
+      this.hero.lastFireball = now;
+      var newFB = new Fireball({pos: this.calcFBpos(), facing: this.hero.lastDir, board: this.board});
+      this.fireballs.push(newFB);
+    }
+  }
+
+  calcFBpos() {
+    var temp = this.hero.pos.slice(0);
+    var x = temp[0];
+    var y = temp[1];
+    switch (this.hero.lastDir) {
+    case "N":
+      x -= this.hero.width/2;
+      y -= this.hero.height;
+      break;
+    case "E":
+      y -= this.hero.height/2;
+      break;
+    case "S":
+      x -= this.hero.width/2;
+      break;
+    case "W":
+      x -= this.hero.width;
+      y -= this.hero.height/2;
+      break;
+    case "NE":
+      y -= this.hero.height;
+      break;
+    case "NW":
+      x -= this.hero.width;
+      y -= this.hero.height;
+      break;
+    case "SW":
+      x -= this.hero.width;
+      break;
+    default:
+      break;
+
+      }
+      console.log(this.hero.pos);
+      console.log([x,y]);
+      return [x,y];
+  }
+  collsionCheckFireballs() {
+    var fb;
+    var m;
+    for (var i = 0; i < this.fireballs.length; i++) {
+      fb = this.fireballs[i];
+      for (var i = 0; i < this.monsters.length; i++) {
+        m = this.monsters[i];
+        if (
+    			fb.pos[0] <= (m.pos[0] + 32)
+    			&& m.pos[0] <= (fb.pos[0] + 32)
+    			&& fb.pos[1] <= (m.pos[1] + 32)
+    			&& m.pos[1] <= (fb.pos[1] + 32)
+    		) {
+            m.done = true;
+            fb.done = true;
+          }
+      }
+    }
+  }
+
+  collsionCheckCoins() {
+    for (var i = 0; i < this.coins.length; i++) {
+      let coin = this.coins[i];
+      let hero = this.hero;
+      if (
+        hero.pos[0] <= (coin.pos[0] + 32)
+        && coin.pos[0] <= (hero.pos[0] + 32)
+        && hero.pos[1] <= (coin.pos[1] + 32)
+        && coin.pos[1] <= (hero.pos[1] + 32)
+        && (!coin.taken)
+      ) {
+          coin.taken = true;
+          coin.sound.play();
+        }
+    }
+  }
+
+
+  collsionCheckMonsters() {
+
+  }
+
+
+
+
+} // end class
+
+module.exports = Game;
