@@ -14,12 +14,13 @@ var requestAnimationFrame =
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
 canvas.width = 512;
-canvas.height = 512;
+canvas.height = 480;
 document.body.appendChild(canvas);
 
+var lifeMeter = document.getElementById('score');
 // The main game loop
 
-let game = new Game({ctx: ctx, canvas: canvas, boardDimensions:
+let game = new Game({ctx: ctx, canvas: canvas, lifeMeter: lifeMeter, boardDimensions:
   [[0,0], [canvas.height, canvas.width]]});
 
 	var keysDown = {};

@@ -6,6 +6,8 @@ class Fireball extends Moveable {
     this.facing = obj.facing;
     this.pos = obj.pos;
     this.automover = false;
+    this.damage = 3;
+    this.fireballSound = new Audio ("./images/105016__julien-matthey__jm-fx-fireball-01.wav");
 
     this.name = "FIREBALL";
     this.width = 64;

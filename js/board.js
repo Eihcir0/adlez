@@ -3,17 +3,20 @@ class Board {
     this.ctx = obj.ctx;
     this.canvas = obj.canvas;
     this.boardId = obj.id;
-    this.height = 512;
-    this.width = 512;
+    this.height = this.canvas.height;  ///temporary fix ??
+    this.width = this.canvas.width;
     this.boardDimensions = obj.boardDimensions;
-    this.boardWidth = this.boardDimensions[1][0] - this.boardDimensions[0][0];
-    this.boardHeight = this.boardDimensions[1][1] - this.boardDimensions[0][1];
+    this.imageReady = false;
+    this.image = new Image();
+    this.image.src =
+    "./images/background.png";
+    this.image.onload = () => (this.imageReady = true);
   }
 
   posCenter() {
     var xxx = Math.floor((this.boardDimensions[1][0] / 2)
     + 166 );
-    var yyy = Math.floor((this.boardHeight / 2) );
+    var yyy = Math.floor((this.height / 2) );
     return [xxx,yyy];
 
   }
@@ -21,9 +24,20 @@ class Board {
   render() {
   // Draw a green background. Pretend it's grass
   	this.ctx.fillStyle = "rgb(51, 118, 36)";
-  	this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
+  	this.ctx.fillRect(0, 0, this.width, this.height);
+    this.ctx.drawImage(
+		this.image,
+		0,
+    0,
+    512,
+    512,
+		0,
+    0,
+    512,
+		512
+	);
   }
+
 
 } //end class
 

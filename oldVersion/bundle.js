@@ -120,7 +120,7 @@
 		ctx.fillText("arrow keys to move", 10, 62);
 		ctx.fillText("'S': shakes ass", 10, 92);
 		ctx.fillText("Monsters caught: " + monstersCaught, 10, 132);
-		ctx.fillText("Coins: " + coinsTaken, 10, 162);
+		ctx.fillText("Coins: " + coinsdying, 10, 162);
 	
 	};
 	// Main game loop
@@ -182,11 +182,11 @@
 				&& coin.pos[0] <= (hero.pos[0] + 32)
 				&& hero.pos[1] <= (coin.pos[1] + 32)
 				&& coin.pos[1] <= (hero.pos[1] + 32)
-				&& (!coin.taken)
+				&& (!coin.dying)
 			) {
-				coin.taken = true;
+				coin.dying = true;
 				coin.sound.play();
-				++coinsTaken;
+				++coinsdying;
 			}
 			}
 	
@@ -215,7 +215,7 @@
 	var last = Date.now();
 	var keysDown = {};
 	var monstersCaught = 0;
-	var coinsTaken = 0;
+	var coinsdying = 0;
 	addEventListener("keydown", function (e) {
 		keysDown[e.keyCode] = true;
 	}, false);
@@ -805,7 +805,7 @@
 	    this.width = 32;
 	    this.height = 32;
 	    this.pos = obj.pos;
-	    this.taken = false;
+	    this.dying = false;
 	    this.done = false;
 	    this.speed = 0;
 	    this.directionVector = [0,0];
@@ -881,7 +881,7 @@
 	
 	
 	  updateAnim(elapsed) {
-	    if (this.taken) {
+	    if (this.dying) {
 	      this.animTimer += elapsed;
 	      if (this.animTimer >= this.animDelay) {
 	        this.animTimer = 0;

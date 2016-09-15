@@ -19,7 +19,7 @@ class Coin extends Moveable {
     this.width = 32;
     this.height = 32;
     this.pos = obj.pos;
-    this.taken = false;
+    this.dying = false;
     this.done = false;
     this.speed = 0;
     this.directionVector = [0,0];
@@ -95,7 +95,7 @@ class Coin extends Moveable {
 
 
   updateAnim(elapsed) {
-    if (this.taken) {
+    if (this.dying) {
       this.animTimer += elapsed;
       if (this.animTimer >= this.animDelay) {
         this.animTimer = 0;

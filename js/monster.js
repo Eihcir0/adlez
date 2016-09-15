@@ -5,8 +5,18 @@ class Monster extends Moveable {
     super(obj);
     this.pos = obj.pos;
     this.automover = true;
+    this.getHitSound = new Audio ("./images/146977__jwmalahy__desk-thud.wav");
+    this.dyingSound = new Audio ("./images/137036__pyrocamancer__beast-death.wav");
 
 
+  }
+
+  getHit(damage) {
+    this.getHitSound.play();
+    this.hp -= damage;
+    if (this.hp <= 0) {
+      this.done = true;
+      this.dyingSound.play();}
   }
 
 

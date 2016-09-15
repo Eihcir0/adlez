@@ -6,7 +6,7 @@ class Coin extends Moveable {
     this.animationOn = false;
     this.pos = obj.pos;
     this.automover = false;
-    this.taken = false;
+    this.dying = false;
     this.facing = "N";
     this.name = "COIN";
     this.width = 32;
@@ -25,13 +25,13 @@ class Coin extends Moveable {
     this.image.src =
     "./images/spinning_coin_gold.png";
     this.image.onload = () => (this.imageReady = true);
-    this.sound = new Audio('./images/smb_1-up.wav');
+    this.sound = new Audio('./images/349281__adam-n__coin-on-coins-05.wav');
 
 
   }
 
   updateAnim(elapsed) {
-  if (this.taken) {
+  if (this.dying) {
     this.animTimer += elapsed;
     if (this.animTimer >= this.animDelay) {
       this.animTimer = 0;

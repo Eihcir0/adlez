@@ -45,7 +45,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	const Game = __webpack_require__(1);
-	const handleInput = __webpack_require__(8);
+	const handleInput = __webpack_require__(10);
 
 	// A cross-browser requestAnimationFrame
 	// https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
@@ -60,12 +60,13 @@
 	var canvas = document.createElement("canvas");
 	var ctx = canvas.getContext("2d");
 	canvas.width = 512;
-	canvas.height = 512;
+	canvas.height = 480;
 	document.body.appendChild(canvas);
 
+	var lifeMeter = document.getElementById('score');
 	// The main game loop
 
-	let game = new Game({ctx: ctx, canvas: canvas, boardDimensions:
+	let game = new Game({ctx: ctx, canvas: canvas, lifeMeter: lifeMeter, boardDimensions:
 	  [[0,0], [canvas.height, canvas.width]]});
 
 		var keysDown = {};
@@ -111,8 +112,8 @@
 	const Hero = __webpack_require__(3);
 	const Fireball = __webpack_require__(5);
 	const skullGuy = __webpack_require__(6);
-	const Greeny = __webpack_require__(9);
-	const Coin = __webpack_require__(11);
+	const Greeny = __webpack_require__(8);
+	const Coin = __webpack_require__(9);
 
 	class Game {
 	  constructor(obj) {
@@ -123,16 +124,20 @@
 	    this.board = new Board({id: 1, ctx: this.ctx, canvas: this.canvas, boardDimensions: this.boardDimensions});
 
 	    this.hero = new Hero({board: this.board, pos: this.board.posCenter()});
+	    this.lifeMeter = obj.lifeMeter;
+
 
 	    this.monsters = [];
 	    this.monsters.push(new skullGuy({board: this.board, pos: [100,100]}));
 	    this.monsters.push(new Greeny({board: this.board, pos: [200,100]}));
 
+	    this.monsters.push(new Greeny({board: this.board, pos: [50,300]}));
+
 	    this.coins = [];
 	    for (var i = 0; i < 10; i++) {
 		     var coin = new Coin({board: this.board});
-		      coin.pos = [(Math.random()*(this.canvas.width)),
-			    (Math.random()*(this.canvas.height)) ];
+		      coin.pos = [(Math.random()*(this.board.width)),
+			    (Math.random()*(this.board.height)) ];
 		      this.coins.push(coin);
 	    }
 
@@ -148,15 +153,16 @@
 	    this.updateMonsters(dt);
 	    this.updateCoins(dt);
 	    this.collsionCheckFireballs();
+	    if (this.hero.attackApex) {this.collisionCheckHeroWeapon();}
 	    this.collsionCheckCoins();
-	    // this.collsionCheckMonsters();
+	    this.collsionCheckMonsters();
 	  }
 
 
 
 
 	  render () {
-
+	    this.lifeMeter.innerHTML = "♡".repeat(this.hero.life);
 	    this.board.render();
 
 	    this.hero.render();
@@ -222,12 +228,14 @@
 	  }
 
 	  addFireball() {
+	    console.log("add fireball");
 	    this.hero.newFireball = false;
 	    var now = Date.now();
 	    if (now - this.hero.lastFireball > this.hero.fireballDelay) {
 	      this.hero.lastFireball = now;
 	      var newFB = new Fireball({pos: this.calcFBpos(), facing: this.hero.lastDir, board: this.board});
 	      this.fireballs.push(newFB);
+	      newFB.fireballSound.play();
 	    }
 	  }
 
@@ -237,28 +245,23 @@
 	    var y = temp[1];
 	    switch (this.hero.lastDir) {
 	    case "N":
-	      x -= this.hero.width/2;
-	      y -= this.hero.height;
+	      y -= this.hero.height / 2;
 	      break;
 	    case "E":
-	      y -= this.hero.height/2;
+	      x += this.hero.width / 3;
+	      y += this.hero.height * 0.10;
 	      break;
 	    case "S":
-	      x -= this.hero.width/2;
 	      break;
 	    case "W":
-	      x -= this.hero.width;
-	      y -= this.hero.height/2;
+	      x -= this.hero.width / 3;
+	      y += this.hero.height*.1;
 	      break;
 	    case "NE":
-	      y -= this.hero.height;
 	      break;
 	    case "NW":
-	      x -= this.hero.width;
-	      y -= this.hero.height;
 	      break;
 	    case "SW":
-	      x -= this.hero.width;
 	      break;
 	    default:
 	      break;
@@ -273,41 +276,114 @@
 	    var m;
 	    for (var i = 0; i < this.fireballs.length; i++) {
 	      fb = this.fireballs[i];
-	      for (var i = 0; i < this.monsters.length; i++) {
-	        m = this.monsters[i];
+	      for (var j = 0; j < this.monsters.length; j++) {
+	        m = this.monsters[j];
 	        if (
 	    			fb.pos[0] <= (m.pos[0] + 32)
 	    			&& m.pos[0] <= (fb.pos[0] + 32)
 	    			&& fb.pos[1] <= (m.pos[1] + 32)
 	    			&& m.pos[1] <= (fb.pos[1] + 32)
 	    		) {
-	            m.done = true;
+	            m.getHit(fb.damage);
 	            fb.done = true;
 	          }
 	      }
 	    }
 	  }
 
-	  collsionCheckCoins() {
-	    for (var i = 0; i < this.coins.length; i++) {
-	      let coin = this.coins[i];
-	      let hero = this.hero;
+	  collisionCheckHeroWeapon() {
+	    var hero = this.hero;
+	    var x = 0;
+	    var y = 0;
+	    var ymod = 35;
+	    var xmod = 50;
+	    switch (this.hero.facing) { // last dir??
+	    case "N":
+	      y -= ymod;
+	      break;
+	    case "E":
+	      x += xmod;
+	      break;
+	    case "S":
+	      y += ymod * 2;
+	      break;
+	    case "W":
+	      x -= xmod;
+	      y += ymod;
+	      break;
+	    case "NE":
+	      x += xmod;
+	      break;
+	    case "NW":
+	      x -= xmod;
+	      y += ymod;
+	      break;
+	    case "SW":
+	      x -= xmod;
+	      y += ymod;
+	      break;
+	    default:
+	      break;
+
+	      }
+	    var m;
+	    for (var i = 0; i < this.monsters.length; i++) {
+	      m = this.monsters[i];
 	      if (
-	        hero.pos[0] <= (coin.pos[0] + 32)
-	        && coin.pos[0] <= (hero.pos[0] + 32)
-	        && hero.pos[1] <= (coin.pos[1] + 32)
-	        && coin.pos[1] <= (hero.pos[1] + 32)
-	        && (!coin.taken)
-	      ) {
-	          coin.taken = true;
-	          coin.sound.play();
+	  			hero.pos[0] + x <= (m.pos[0] + 32)
+	  			&& m.pos[0] <= (hero.pos[0] + 32 + x)
+	  			&& hero.pos[1] + y <= (m.pos[1] + 32)
+	  			&& m.pos[1] <= (hero.pos[1] + 32 + y )
+	  		) {
+	          if (!(hero.directHit)) {
+	            m.getHit(hero.atkDamage);
+	            hero.directHit = true;
+	          }
 	        }
 	    }
 	  }
 
 
-	  collsionCheckMonsters() {
 
+	  collsionCheckCoins() {
+	    if (!(this.hero.attacking)) {
+	      for (var i = 0; i < this.coins.length; i++) {
+	        let coin = this.coins[i];
+	        let hero = this.hero;
+	        let heroX = hero.pos[0];
+	        let heroY = hero.pos[1];
+
+	        if (
+	             coin.pos[0] <= (hero.pos[0] + (hero.width *0.75))
+	          && hero.pos[0] <= (coin.pos[0] + (coin.width /2))
+	          && coin.pos[1] <= (hero.pos[1] + hero.height)
+	          && hero.pos[1] <= (coin.pos[1] + coin.width / 2)
+	          && (!coin.dying)
+	        ) {
+	            coin.dying = true;
+	            coin.animDelay = 25;
+	            coin.sound.play();
+	          }
+	      }
+	    }
+	  }
+
+
+	  collsionCheckMonsters() {
+	    for (var i = 0; i < this.monsters.length; i++) {
+	      let monster = this.monsters[i];
+	      let hero = this.hero;
+	      let heroX = hero.pos[0];
+	      let heroY = hero.pos[1];
+
+	      if (
+	           monster.pos[0] <= (hero.pos[0] + (hero.width *0.75))
+	        && hero.pos[0] <= (monster.pos[0] + (monster.width /2))
+	        && monster.pos[1] <= (hero.pos[1] + hero.height)
+	        && hero.pos[1] <= (monster.pos[1] + monster.width / 2)
+	        && (!hero.dying) && (!hero.justHit)
+	      ) {hero.getHit();}
+	    }
 	  }
 
 
@@ -327,17 +403,20 @@
 	    this.ctx = obj.ctx;
 	    this.canvas = obj.canvas;
 	    this.boardId = obj.id;
-	    this.height = 512;
-	    this.width = 512;
+	    this.height = this.canvas.height;  ///temporary fix ??
+	    this.width = this.canvas.width;
 	    this.boardDimensions = obj.boardDimensions;
-	    this.boardWidth = this.boardDimensions[1][0] - this.boardDimensions[0][0];
-	    this.boardHeight = this.boardDimensions[1][1] - this.boardDimensions[0][1];
+	    this.imageReady = false;
+	    this.image = new Image();
+	    this.image.src =
+	    "./images/background.png";
+	    this.image.onload = () => (this.imageReady = true);
 	  }
 
 	  posCenter() {
 	    var xxx = Math.floor((this.boardDimensions[1][0] / 2)
 	    + 166 );
-	    var yyy = Math.floor((this.boardHeight / 2) );
+	    var yyy = Math.floor((this.height / 2) );
 	    return [xxx,yyy];
 
 	  }
@@ -345,9 +424,20 @@
 	  render() {
 	  // Draw a green background. Pretend it's grass
 	  	this.ctx.fillStyle = "rgb(51, 118, 36)";
-	  	this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
+	  	this.ctx.fillRect(0, 0, this.width, this.height);
+	    this.ctx.drawImage(
+			this.image,
+			0,
+	    0,
+	    512,
+	    512,
+			0,
+	    0,
+	    512,
+			512
+		);
 	  }
+
 
 	} //end class
 
@@ -363,42 +453,62 @@
 	class Hero extends Moveable {
 	  constructor(obj) {
 	    super(obj);
-
+	    this.attackSound = new Audio("./images/209121__lukesharples__sword-swipe11.wav");
+	    this.gotHitSound = new Audio ("./images/242623__reitanna__grunt.wav");
+	    this.dyingSound = new Audio ("./images/101120__robinhood76__01685-harp-groan.wav");
+	    this.life = 5;
+	    this.level = 5;
+	    this.exp = 0;
+	    this.endAttack();
+	    this.lastAttack = Date.now();
+	    this.justHit = false;
+	    this.justHitTimer = 0;
 	    this.newFireball = false;
 	    this.lastFireball = Date.now();
-	    this.fireballDelay = 1000;
+	    this.fireballDelay = 2000;
+	    this.attackDelay = 200;
 	    this.name = "HERO";
-	    this.width = 32;
-	    this.height = 32;
+	    this.width = 64;
+	    this.height = 64;
 	    this.shakingAss = false;
-
+	    this.atkDamage = 1;
+	    this.directHit = true;
 	    this.speed = 0;
 	    this.Maxspeed = 200;
 
 	    this.pos = obj.pos;
 
-	    this.animSet = 4;
+	    this.animSet = 3;
 	    this.spriteYoffset = 0;
 	    this.animFrame = 0;
-	    this.animNumFrames = 2;
-	    this.animDelay = 100;
+	    this.animNumFrames = 9;
+	    this.animDelay = 40;
 	    this.animTimer = 0;
 	    this.imageReady = false;
 	    this.image = new Image();
 	    this.image.src =
-	    "./images/hero_sheet.png";
+	    "./images/new_mimi.png";
 	    this.image.onload = () => (this.imageReady = true);
-
+	    this.facing = "S";
+	    this.updateAnimSet();
 
 	  }
 
+	  stop() {
+	    if (!(this.attacking)) {
+	      if (this.facing !== "STOP") {
+	        this.lastDir = this.facing;}
+	        this.facing = "STOP";
+	        this.animationOn = false;
+	      }
+	  }
 
 
 	  shakeAssOn() {
 	    this.shakingAss = true;
 	    this.facing = "N";
 	    this.updateAnimSet();
-	    this.animDelay = 50;
+	    this.animDelay = 10;
 	    this.movementOn = false;
 	    this.animationOn = true;
 
@@ -414,30 +524,174 @@
 	    this.automover = false;
 	  }
 
+	  getHit() {
+	    if (this.life === 1) {
+	        this.gotHitSound.play();
+	        this.dyingSound.play();
+	        this.stop();
+	        this.endAttack();
+	        this.animationOn = true;
+	        this.justHit = false;
+	        this.justHitTimer = 0;
+	        this.life = 0;
+	        this.animFrame = 0;
+	        this.dying = true;
+	        this.spriteYoffset = 20;
+	        this.animNumFrames = 5;
+	        this.animDelay = 200;
+	        this.speed = 0;
+	      } else {
+	        this.gotHitSound.play();
+	        this.life -= 1;
+	        this.justHit = true;
+	      }
+
+	  }
+
+
+
+	  attack() {
+	    if (Date.now() - this.lastAttack  > this.attackDelay) {
+	        if (this.level > 1) {this.newFireball=true;}
+	        this.lastAttack = Date.now();
+	        this.attacking = true;
+	        this.animationOn = true;
+	        this.movementOn = false;
+	        this.animFrame = 0;
+	        this.animNumFrames = 6;
+	        this.facing = this.lastDir;
+	        this.directHit = false;
+	        this.updateAnimSet();
+	        this.attackSound.play();
+	      }
+	    }
+
+	    endAttack() {
+	      this.attacking = false;
+	      this.movementOn = true;
+	      this.height = 64;
+	      this.width = 64;
+	      this.attackXoffset = 0;
+	      this.attackYoffset = 0;
+	      this.attackApex = false;
+	      this.updateAnimSet();
+	      this.facing = "STOP";
+	    }
+
 
 	  updateAnimSet() {  //should refactor this with a const array
 	    let d = this.facing;
 	    if (d === "N") {
 	      this.animSet = 0;
+	      this.spriteYoffset = 8;
+	      if (this.attacking) {
+	        this.attackXoffset = -64;
+	        this.spriteYoffset = 22 / 3;
+	      }
 	    } else if (d === "NE") {
-	      this.animSet = 1;
+	      this.animSet = 0;
+	      this.spriteYoffset = 11;
+	      if (this.attacking) {
+	        this.attackXoffset = -64;
+	        this.spriteYoffset = 31/3;
+	      }
 	    } else if (d === "E") {
-	      this.animSet = 2;
+	      this.animSet = 0;
+	      this.spriteYoffset = 11;
+	      if (this.attacking) {
+	        this.attackXoffset = -64;
+	        this.spriteYoffset = 31/3;
+	      }
 	    } else if (d==="SE") {
-	      this.animSet = 3;
+	      this.animSet = 0;
+	      this.spriteYoffset = 11;
+	      if (this.attacking) {
+	        this.attackXoffset = -64;
+	        this.spriteYoffset = 31/3;
+	      }
 	    } else if (d==="S" || d==="STOP") {
-	      this.animSet = 4;
+	      this.animSet = 0;
+	      this.spriteYoffset = 10;
+	      if (this.attacking) {
+	        this.spriteYoffset = 28/ 3;
+	        this.attackXoffset = -64;
+	      }
 	    } else if (d==="SW") {
-	      this.animSet = 5;
+	      this.animSet = 0;
+	      this.spriteYoffset = 9;
+	      if (this.attacking) {
+	        this.spriteYoffset = 23/ 3;
+	        this.attackXoffset = -64;
+	        this.attackYoffset = -128;
+	      }
 	    } else if (d==="W") {
-	      this.animSet = 6;
+	      this.animSet = 0;
+	      this.spriteYoffset = 9;
+	      if (this.attacking) {
+	        this.spriteYoffset = 23/ 3;
+	        this.attackXoffset = -64;
+	        this.attackYoffset = -128;
+	      }
 	    } else if (d==="NW") {
-	      this.animSet = 7;
+	      this.animSet = 0;
+	      this.spriteYoffset = 9;
+	      if (this.attacking) {
+	        this.spriteYoffset = 23/ 3;
+	        this.attackXoffset = -64;
+	        this.attackYoffset = -128;
+	      }
 	    }
 	  }
 
+	  updateAnim(elapsed) {
+	    if (this.animationOn) {
+	      this.animTimer += elapsed;
 
+	      if (this.animTimer >= this.animDelay) {
+	        this.animTimer = 0;
+	        ++this.animFrame;
+	        if (this.animFrame > 3 && this.attacking) {this.attackApex = true;console.log("APEX!");}
+	        if (this.animFrame >= this.animNumFrames) {
+	          if (this.dying) {
+	            this.animFrame = 5;
+	            this.done = true;
+	          } else if (this.attacking) {
+	            this.endAttack();
+	          } else {
+	            this.animFrame = 0;
+	          }
+	        }
+	      }
+	    }
+	  }
+	  render() {
+	    if (this.attacking) {
+	      this.ctx.drawImage(
+	  		this.image,
+	  		(this.animSet * (this.width * 3 * this.animNumFrames)) +
+	      (this.animFrame * this.width * 3),
+	      this.spriteYoffset*this.height*3,
+	      this.width*3,
+	      this.height*3,
+	  		this.pos[0] + this.attackXoffset,
+	      this.pos[1] + this.attackYoffset,
+	      this.width*3,
+	  		this.height*3
+	      );
 
+	    } else {
+	      this.ctx.drawImage(
+	  		this.image,
+	  		this.currentSprite(),
+	      this.spriteYoffset*this.height,
+	      this.width,
+	      this.height,
+	  		this.pos[0] + this.attackXoffset,
+	      this.pos[1] + this.attackYoffset,
+	      this.width,
+	  		this.height
+	      );}
+	    }
 
 	} //end class
 
@@ -514,21 +768,12 @@
 	            this.currentMovement = 0;
 	          }
 	          this.facing = (this.movements[this.currentMovement]);
-
 	        }
-
 	        this.animTimer = 0;
 	        ++this.animFrame;
-	        if (this.done) {
-	          this.pos[1] -= 3;
-	          if (this.animFrame >= this.animNumFrames) {
-	            this.done = true;
-	          }
-	        }
 	        if (this.animFrame >= this.animNumFrames) {
 	            this.animFrame = 0;
 	          }
-
 	      }
 	    }
 	  }
@@ -546,8 +791,19 @@
 	      } else {
 	        speedFactor=1;
 	      }
-	      newPos[0] += Math.round(move *  this.MOVES[this.facing][0]);
-	      newPos[1] += Math.round(move * speedFactor * this.MOVES[this.facing][1]);
+	      if (this.justHit) {
+	        newPos[0] += Math.round(-1 * 4 * move *  this.MOVES[this.lastDir][0]);
+	        newPos[1] += Math.round(-1 * 4 * move * speedFactor * this.MOVES[this.lastDir][1]);
+	        this.justHitTimer++;
+	        if (this.justHitTimer > 5) {
+	          this.justHit = false;
+	          this.justHitTimer = 0;
+	          this.stop();
+	        }
+	    } else {
+	        newPos[0] += Math.round(move *  this.MOVES[this.facing][0]);
+	        newPos[1] += Math.round(move * speedFactor * this.MOVES[this.facing][1]);
+	      }
 	    }
 	    this.pos = newPos;
 	  }
@@ -608,6 +864,8 @@
 	    this.facing = obj.facing;
 	    this.pos = obj.pos;
 	    this.automover = false;
+	    this.damage = 3;
+	    this.fireballSound = new Audio ("./images/105016__julien-matthey__jm-fx-fireball-01.wav");
 
 	    this.name = "FIREBALL";
 	    this.width = 64;
@@ -680,7 +938,7 @@
 
 	    this.width = 32;
 	    this.height = 32;
-
+	    this.hp = 10;
 	    this.Maxspeed = 150;
 	    this.speed = 150;
 	    this.facing = "N";
@@ -741,8 +999,18 @@
 	    super(obj);
 	    this.pos = obj.pos;
 	    this.automover = true;
+	    this.getHitSound = new Audio ("./images/146977__jwmalahy__desk-thud.wav");
+	    this.dyingSound = new Audio ("./images/137036__pyrocamancer__beast-death.wav");
 
 
+	  }
+
+	  getHit(damage) {
+	    this.getHitSound.play();
+	    this.hp -= damage;
+	    if (this.hp <= 0) {
+	      this.done = true;
+	      this.dyingSound.play();}
 	  }
 
 
@@ -754,64 +1022,6 @@
 
 /***/ },
 /* 8 */
-/***/ function(module, exports) {
-
-	const handleInput = function (hero, keysDown) {
-
-		// Stop moving the hero
-		hero.stop();
-		// if (hero.shakingAss) {hero.face("N");}
-
-		if (83 in keysDown) { // S
-			hero.shakeAssOn();
-
-		}
-
-		if (37 in keysDown) { // Left
-			hero.go("W");
-		}
-
-		if (38 in keysDown) { // Up
-			hero.go("N");
-		}
-
-
-		if (39 in keysDown) { // Right
-			hero.go("E");
-		}
-
-
-		if (40 in keysDown) { // Down
-			hero.go("S");
-		}
-
-		if (38 in keysDown && 39 in keysDown) { // Up/Right
-			hero.go("NE");
-		}
-
-		if (38 in keysDown && 37 in keysDown) { // Up/Left
-			hero.go("NW");
-		}
-
-		if (40 in keysDown && 39 in keysDown) { // Down/Right
-			hero.go("SE");
-		}
-
-		if (40 in keysDown && 37 in keysDown) { // Down/Left
-			hero.go("SW");
-		}
-		if (32 in keysDown) { // space
-			hero.newFireball = true;
-		}
-
-
-	};
-
-	module.exports = handleInput;
-
-
-/***/ },
-/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	const Monster = __webpack_require__(7);
@@ -822,7 +1032,7 @@
 
 	    this.width = 32;
 	    this.height = 32;
-
+	    this.hp = 6;
 	    this.Maxspeed = 150;
 	    this.speed = 150;
 	    this.facing = "N";
@@ -873,8 +1083,7 @@
 
 
 /***/ },
-/* 10 */,
-/* 11 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	const Moveable = __webpack_require__(4);
@@ -885,7 +1094,7 @@
 	    this.animationOn = false;
 	    this.pos = obj.pos;
 	    this.automover = false;
-	    this.taken = false;
+	    this.dying = false;
 	    this.facing = "N";
 	    this.name = "COIN";
 	    this.width = 32;
@@ -904,13 +1113,13 @@
 	    this.image.src =
 	    "./images/spinning_coin_gold.png";
 	    this.image.onload = () => (this.imageReady = true);
-	    this.sound = new Audio('./images/smb_1-up.wav');
+	    this.sound = new Audio('./images/349281__adam-n__coin-on-coins-05.wav');
 
 
 	  }
 
 	  updateAnim(elapsed) {
-	  if (this.taken) {
+	  if (this.dying) {
 	    this.animTimer += elapsed;
 	    if (this.animTimer >= this.animDelay) {
 	      this.animTimer = 0;
@@ -930,6 +1139,65 @@
 	} //end class
 
 	module.exports = Coin;
+
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	const handleInput = function (hero, keysDown) {
+		if (hero.dying || hero.attacking) {return;}
+
+		// Stop moving the hero
+		hero.stop();
+		// if (hero.shakingAss) {hero.face("N");}
+
+		if (83 in keysDown) { // S
+			hero.shakeAssOn();
+
+		}
+
+		if (37 in keysDown) { // Left
+			hero.go("W");
+		}
+
+		if (38 in keysDown) { // Up
+			hero.go("N");
+		}
+
+
+		if (39 in keysDown) { // Right
+			hero.go("E");
+		}
+
+
+		if (40 in keysDown) { // Down
+			hero.go("S");
+		}
+
+		if (38 in keysDown && 39 in keysDown) { // Up/Right
+			hero.go("NE");
+		}
+
+		if (38 in keysDown && 37 in keysDown) { // Up/Left
+			hero.go("NW");
+		}
+
+		if (40 in keysDown && 39 in keysDown) { // Down/Right
+			hero.go("SE");
+		}
+
+		if (40 in keysDown && 37 in keysDown) { // Down/Left
+			hero.go("SW");
+		}
+		if (32 in keysDown) { // space
+			hero.attack();
+		}
+
+
+	};
+
+	module.exports = handleInput;
 
 
 /***/ }

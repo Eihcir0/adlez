@@ -1,4 +1,5 @@
 const handleInput = function (hero, keysDown) {
+	if (hero.dying || hero.attacking) {return;}
 
 	// Stop moving the hero
 	hero.stop();
@@ -43,7 +44,7 @@ const handleInput = function (hero, keysDown) {
 		hero.go("SW");
 	}
 	if (32 in keysDown) { // space
-		hero.newFireball = true;
+		hero.attack();
 	}
 
 

@@ -64,21 +64,12 @@ class Moveable {
             this.currentMovement = 0;
           }
           this.facing = (this.movements[this.currentMovement]);
-
         }
-
         this.animTimer = 0;
         ++this.animFrame;
-        if (this.done) {
-          this.pos[1] -= 3;
-          if (this.animFrame >= this.animNumFrames) {
-            this.done = true;
-          }
-        }
         if (this.animFrame >= this.animNumFrames) {
             this.animFrame = 0;
           }
-
       }
     }
   }
@@ -96,8 +87,19 @@ class Moveable {
       } else {
         speedFactor=1;
       }
-      newPos[0] += Math.round(move *  this.MOVES[this.facing][0]);
-      newPos[1] += Math.round(move * speedFactor * this.MOVES[this.facing][1]);
+      if (this.justHit) {
+        newPos[0] += Math.round(-1 * 4 * move *  this.MOVES[this.lastDir][0]);
+        newPos[1] += Math.round(-1 * 4 * move * speedFactor * this.MOVES[this.lastDir][1]);
+        this.justHitTimer++;
+        if (this.justHitTimer > 5) {
+          this.justHit = false;
+          this.justHitTimer = 0;
+          this.stop();
+        }
+    } else {
+        newPos[0] += Math.round(move *  this.MOVES[this.facing][0]);
+        newPos[1] += Math.round(move * speedFactor * this.MOVES[this.facing][1]);
+      }
     }
     this.pos = newPos;
   }

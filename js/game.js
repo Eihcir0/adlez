@@ -14,16 +14,20 @@ class Game {
     this.board = new Board({id: 1, ctx: this.ctx, canvas: this.canvas, boardDimensions: this.boardDimensions});
 
     this.hero = new Hero({board: this.board, pos: this.board.posCenter()});
+    this.lifeMeter = obj.lifeMeter;
+
 
     this.monsters = [];
     this.monsters.push(new skullGuy({board: this.board, pos: [100,100]}));
     this.monsters.push(new Greeny({board: this.board, pos: [200,100]}));
 
+    this.monsters.push(new Greeny({board: this.board, pos: [50,300]}));
+
     this.coins = [];
     for (var i = 0; i < 10; i++) {
 	     var coin = new Coin({board: this.board});
-	      coin.pos = [(Math.random()*(this.canvas.width)),
-		    (Math.random()*(this.canvas.height)) ];
+	      coin.pos = [(Math.random()*(this.board.width)),
+		    (Math.random()*(this.board.height)) ];
 	      this.coins.push(coin);
     }
 
@@ -39,15 +43,16 @@ class Game {
     this.updateMonsters(dt);
     this.updateCoins(dt);
     this.collsionCheckFireballs();
+    if (this.hero.attackApex) {this.collisionCheckHeroWeapon();}
     this.collsionCheckCoins();
-    // this.collsionCheckMonsters();
+    this.collsionCheckMonsters();
   }
 
 
 
 
   render () {
-
+    this.lifeMeter.innerHTML = "♡".repeat(this.hero.life);
     this.board.render();
 
     this.hero.render();
@@ -113,12 +118,14 @@ class Game {
   }
 
   addFireball() {
+    console.log("add fireball");
     this.hero.newFireball = false;
     var now = Date.now();
     if (now - this.hero.lastFireball > this.hero.fireballDelay) {
       this.hero.lastFireball = now;
       var newFB = new Fireball({pos: this.calcFBpos(), facing: this.hero.lastDir, board: this.board});
       this.fireballs.push(newFB);
+      newFB.fireballSound.play();
     }
   }
 
@@ -128,28 +135,23 @@ class Game {
     var y = temp[1];
     switch (this.hero.lastDir) {
     case "N":
-      x -= this.hero.width/2;
-      y -= this.hero.height;
+      y -= this.hero.height / 2;
       break;
     case "E":
-      y -= this.hero.height/2;
+      x += this.hero.width / 3;
+      y += this.hero.height * 0.10;
       break;
     case "S":
-      x -= this.hero.width/2;
       break;
     case "W":
-      x -= this.hero.width;
-      y -= this.hero.height/2;
+      x -= this.hero.width / 3;
+      y += this.hero.height*.1;
       break;
     case "NE":
-      y -= this.hero.height;
       break;
     case "NW":
-      x -= this.hero.width;
-      y -= this.hero.height;
       break;
     case "SW":
-      x -= this.hero.width;
       break;
     default:
       break;
@@ -164,41 +166,114 @@ class Game {
     var m;
     for (var i = 0; i < this.fireballs.length; i++) {
       fb = this.fireballs[i];
-      for (var i = 0; i < this.monsters.length; i++) {
-        m = this.monsters[i];
+      for (var j = 0; j < this.monsters.length; j++) {
+        m = this.monsters[j];
         if (
     			fb.pos[0] <= (m.pos[0] + 32)
     			&& m.pos[0] <= (fb.pos[0] + 32)
     			&& fb.pos[1] <= (m.pos[1] + 32)
     			&& m.pos[1] <= (fb.pos[1] + 32)
     		) {
-            m.done = true;
+            m.getHit(fb.damage);
             fb.done = true;
           }
       }
     }
   }
 
-  collsionCheckCoins() {
-    for (var i = 0; i < this.coins.length; i++) {
-      let coin = this.coins[i];
-      let hero = this.hero;
+  collisionCheckHeroWeapon() {
+    var hero = this.hero;
+    var x = 0;
+    var y = 0;
+    var ymod = 35;
+    var xmod = 50;
+    switch (this.hero.facing) { // last dir??
+    case "N":
+      y -= ymod;
+      break;
+    case "E":
+      x += xmod;
+      break;
+    case "S":
+      y += ymod * 2;
+      break;
+    case "W":
+      x -= xmod;
+      y += ymod;
+      break;
+    case "NE":
+      x += xmod;
+      break;
+    case "NW":
+      x -= xmod;
+      y += ymod;
+      break;
+    case "SW":
+      x -= xmod;
+      y += ymod;
+      break;
+    default:
+      break;
+
+      }
+    var m;
+    for (var i = 0; i < this.monsters.length; i++) {
+      m = this.monsters[i];
       if (
-        hero.pos[0] <= (coin.pos[0] + 32)
-        && coin.pos[0] <= (hero.pos[0] + 32)
-        && hero.pos[1] <= (coin.pos[1] + 32)
-        && coin.pos[1] <= (hero.pos[1] + 32)
-        && (!coin.taken)
-      ) {
-          coin.taken = true;
-          coin.sound.play();
+  			hero.pos[0] + x <= (m.pos[0] + 32)
+  			&& m.pos[0] <= (hero.pos[0] + 32 + x)
+  			&& hero.pos[1] + y <= (m.pos[1] + 32)
+  			&& m.pos[1] <= (hero.pos[1] + 32 + y )
+  		) {
+          if (!(hero.directHit)) {
+            m.getHit(hero.atkDamage);
+            hero.directHit = true;
+          }
         }
     }
   }
 
 
-  collsionCheckMonsters() {
 
+  collsionCheckCoins() {
+    if (!(this.hero.attacking)) {
+      for (var i = 0; i < this.coins.length; i++) {
+        let coin = this.coins[i];
+        let hero = this.hero;
+        let heroX = hero.pos[0];
+        let heroY = hero.pos[1];
+
+        if (
+             coin.pos[0] <= (hero.pos[0] + (hero.width *0.75))
+          && hero.pos[0] <= (coin.pos[0] + (coin.width /2))
+          && coin.pos[1] <= (hero.pos[1] + hero.height)
+          && hero.pos[1] <= (coin.pos[1] + coin.width / 2)
+          && (!coin.dying)
+        ) {
+            coin.dying = true;
+            coin.animDelay = 25;
+            coin.sound.play();
+          }
+      }
+    }
+  }
+
+
+  collsionCheckMonsters() {
+    for (var i = 0; i < this.monsters.length; i++) {
+      let monster = this.monsters[i];
+      let hero = this.hero;
+      let heroX = hero.pos[0];
+      let heroY = hero.pos[1];
+
+      if (
+           monster.pos[0] <= (hero.pos[0] + (hero.width *0.75))
+        && hero.pos[0] <= (monster.pos[0] + (monster.width /2))
+        && monster.pos[1] <= (hero.pos[1] + hero.height)
+        && hero.pos[1] <= (monster.pos[1] + monster.width / 2)
+        && (!hero.dying) && (!hero.justHit)
+      ) {hero.getHit();}
+    }
   }
 
 
