@@ -6,7 +6,8 @@ class Greeny extends Monster {
 
     this.width = 32;
     this.height = 32;
-    this.hp = 6;
+    this.maxHp = 2;
+    this.hp = this.maxHp;
     this.Maxspeed = 150;
     this.speed = 150;
     this.facing = "N";

@@ -3,6 +3,7 @@ const Moveable = require('./moveable.js');
 class Coin extends Moveable {
   constructor(obj) {
     super(obj);
+    this.value = obj.value;
     this.animationOn = false;
     this.pos = obj.pos;
     this.automover = false;
@@ -31,14 +32,19 @@ class Coin extends Moveable {
   }
 
   updateAnim(elapsed) {
-  if (this.dying) {
+
+  if (this.dying || this.blinking) {
     this.animTimer += elapsed;
     if (this.animTimer >= this.animDelay) {
       this.animTimer = 0;
+      if (this.blinking) {this.blinking -= 1;}
+      if (this.dying) {
+
       ++this.animFrame;
       this.pos[1] -= 3;
       if (this.animFrame >= this.animNumFrames) {
           this.done = true;}
+      }
     }
   }
 }

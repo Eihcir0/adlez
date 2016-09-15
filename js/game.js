@@ -13,9 +13,13 @@ class Game {
 
     this.board = new Board({id: 1, ctx: this.ctx, canvas: this.canvas, boardDimensions: this.boardDimensions});
 
+
     this.hero = new Hero({board: this.board, pos: this.board.posCenter()});
     this.lifeMeter = obj.lifeMeter;
-
+    this.coinMeter = obj.coinMeter;
+    this.levelMeter = obj.levelMeter;
+    this.expMeter = obj.expMeter;
+    this.atkStrMeter = obj.atkStrMeter;
 
     this.monsters = [];
     this.monsters.push(new skullGuy({board: this.board, pos: [100,100]}));
@@ -25,9 +29,9 @@ class Game {
 
     this.coins = [];
     for (var i = 0; i < 10; i++) {
-	     var coin = new Coin({board: this.board});
-	      coin.pos = [(Math.random()*(this.board.width)),
-		    (Math.random()*(this.board.height)) ];
+	     var coin = new Coin({board: this.board, value: Math.floor(Math.random()*30)});
+	    coin.pos = [(Math.random()*(this.board.width - 96)+32),
+		    (Math.random()*(this.board.height-96)+32) ];
 	      this.coins.push(coin);
     }
 
@@ -52,7 +56,19 @@ class Game {
 
 
   render () {
-    this.lifeMeter.innerHTML = "♡".repeat(this.hero.life);
+    this.lifeMeter.innerHTML = this.hero.life > 0 ? "♡".repeat(this.hero.life) : "DEAD	☠";
+    this.coinMeter.innerHTML = Math.floor(this.hero.coins);
+
+
+    this.levelMeter.innerHTML = "LEVEL: " + this.hero.level;
+
+
+    this.expMeter.innerHTML = "EXP: " + Math.floor(this.hero.exp);
+
+
+    this.atkStrMeter.innerHTML = "Attack Strength: " + Math.floor(this.hero.atkDamage);
+
+
     this.board.render();
 
     this.hero.render();
@@ -76,7 +92,7 @@ class Game {
 
     var tempFireballs = this.fireballs.slice(0);
     for (var i = 0; i < this.fireballs.length; i++) {
-      if (this.fireballs[i].isOutOfBounds() || this.fireballs[i].done) {
+      if (this.fireballs[i].isOutOfBounds() || this.fireballs[i].hitSomething || this.fireballs[i].done) {
         tempFireballs.splice(i,1);
       }
     }
@@ -92,6 +108,9 @@ class Game {
     var tempMonsters = this.monsters.slice(0);
     for (var i = 0; i < this.monsters.length; i++) {
       if (this.monsters[i].done) {
+        this.hero.exp += this.monsters[i].maxHp * 500;
+        this.coins.push(new Coin({blinking: 8, board: this.board, pos: this.monsters[i].pos.slice(0), value:
+           Math.floor((Math.random()*10+1)*this.monsters[i].maxHp)}));
         tempMonsters.splice(i,1);
       }
     }
@@ -253,10 +272,19 @@ class Game {
             coin.dying = true;
             coin.animDelay = 25;
             coin.sound.play();
+            hero.coins += coin.value % 10;
+            hero.exp += (coin.value % 10) * 10;
+            for (var i = 1; i < (coin.value / 10); i++) {
+
+              window.setTimeout(() => {
+                hero.exp += 100;
+                hero.coins += 10;
+                new Coin({board: this.board}).sound.play();}, i*130);
           }
       }
     }
   }
+}
 
 
   collsionCheckMonsters() {

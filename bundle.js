@@ -45,7 +45,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	const Game = __webpack_require__(1);
-	const handleInput = __webpack_require__(10);
+	const handleInput = __webpack_require__(12);
 
 	// A cross-browser requestAnimationFrame
 	// https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
@@ -64,9 +64,13 @@
 	document.body.appendChild(canvas);
 
 	var lifeMeter = document.getElementById('score');
+	var expMeter = document.getElementById('exp');
+	var levelMeter = document.getElementById('level');
+	var atkStrMeter = document.getElementById('atkStr');
+	var coinMeter = document.getElementById('coins');
 	// The main game loop
 
-	let game = new Game({ctx: ctx, canvas: canvas, lifeMeter: lifeMeter, boardDimensions:
+	let game = new Game({ctx: ctx, canvas: canvas, expMeter: expMeter, atkStrMeter: atkStrMeter, levelMeter: levelMeter, coinMeter: coinMeter, lifeMeter: lifeMeter, boardDimensions:
 	  [[0,0], [canvas.height, canvas.width]]});
 
 		var keysDown = {};
@@ -109,11 +113,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	const Board = __webpack_require__(2);
-	const Hero = __webpack_require__(3);
-	const Fireball = __webpack_require__(5);
-	const skullGuy = __webpack_require__(6);
-	const Greeny = __webpack_require__(8);
-	const Coin = __webpack_require__(9);
+	const Hero = __webpack_require__(5);
+	const Fireball = __webpack_require__(7);
+	const skullGuy = __webpack_require__(8);
+	const Greeny = __webpack_require__(10);
+	const Coin = __webpack_require__(11);
 
 	class Game {
 	  constructor(obj) {
@@ -123,9 +127,13 @@
 
 	    this.board = new Board({id: 1, ctx: this.ctx, canvas: this.canvas, boardDimensions: this.boardDimensions});
 
+
 	    this.hero = new Hero({board: this.board, pos: this.board.posCenter()});
 	    this.lifeMeter = obj.lifeMeter;
-
+	    this.coinMeter = obj.coinMeter;
+	    this.levelMeter = obj.levelMeter;
+	    this.expMeter = obj.expMeter;
+	    this.atkStrMeter = obj.atkStrMeter;
 
 	    this.monsters = [];
 	    this.monsters.push(new skullGuy({board: this.board, pos: [100,100]}));
@@ -135,9 +143,9 @@
 
 	    this.coins = [];
 	    for (var i = 0; i < 10; i++) {
-		     var coin = new Coin({board: this.board});
-		      coin.pos = [(Math.random()*(this.board.width)),
-			    (Math.random()*(this.board.height)) ];
+		     var coin = new Coin({board: this.board, value: Math.floor(Math.random()*30)});
+		    coin.pos = [(Math.random()*(this.board.width - 96)+32),
+			    (Math.random()*(this.board.height-96)+32) ];
 		      this.coins.push(coin);
 	    }
 
@@ -162,7 +170,19 @@
 
 
 	  render () {
-	    this.lifeMeter.innerHTML = "♡".repeat(this.hero.life);
+	    this.lifeMeter.innerHTML = this.hero.life > 0 ? "♡".repeat(this.hero.life) : "DEAD	☠";
+	    this.coinMeter.innerHTML = Math.floor(this.hero.coins);
+
+
+	    this.levelMeter.innerHTML = "LEVEL: " + this.hero.level;
+
+
+	    this.expMeter.innerHTML = "EXP: " + Math.floor(this.hero.exp);
+
+
+	    this.atkStrMeter.innerHTML = "Attack Strength: " + Math.floor(this.hero.atkDamage);
+
+
 	    this.board.render();
 
 	    this.hero.render();
@@ -186,7 +206,7 @@
 
 	    var tempFireballs = this.fireballs.slice(0);
 	    for (var i = 0; i < this.fireballs.length; i++) {
-	      if (this.fireballs[i].isOutOfBounds() || this.fireballs[i].done) {
+	      if (this.fireballs[i].isOutOfBounds() || this.fireballs[i].hitSomething || this.fireballs[i].done) {
 	        tempFireballs.splice(i,1);
 	      }
 	    }
@@ -202,6 +222,9 @@
 	    var tempMonsters = this.monsters.slice(0);
 	    for (var i = 0; i < this.monsters.length; i++) {
 	      if (this.monsters[i].done) {
+	        this.hero.exp += this.monsters[i].maxHp * 500;
+	        this.coins.push(new Coin({blinking: 8, board: this.board, pos: this.monsters[i].pos.slice(0), value:
+	           Math.floor((Math.random()*10+1)*this.monsters[i].maxHp)}));
 	        tempMonsters.splice(i,1);
 	      }
 	    }
@@ -363,10 +386,19 @@
 	            coin.dying = true;
 	            coin.animDelay = 25;
 	            coin.sound.play();
+	            hero.coins += coin.value % 10;
+	            hero.exp += (coin.value % 10) * 10;
+	            for (var i = 1; i < (coin.value / 10); i++) {
+
+	              window.setTimeout(() => {
+	                hero.exp += 100;
+	                hero.coins += 10;
+	                new Coin({board: this.board}).sound.play();}, i*130);
 	          }
 	      }
 	    }
 	  }
+	}
 
 
 	  collsionCheckMonsters() {
@@ -396,10 +428,15 @@
 
 /***/ },
 /* 2 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
+
+	const Tree = __webpack_require__(3);
+
 
 	class Board {
 	  constructor(obj) {
+
+
 	    this.ctx = obj.ctx;
 	    this.canvas = obj.canvas;
 	    this.boardId = obj.id;
@@ -411,6 +448,32 @@
 	    this.image.src =
 	    "./images/background.png";
 	    this.image.onload = () => (this.imageReady = true);
+	    let temp = this.outerTrees1();
+
+	    this.IMMOVEABLES = {
+	      1: temp
+	    };
+	    this.immoveables = this.IMMOVEABLES[this.boardId];
+	    this.immoveables.forEach((el) => el.render() );
+	  }
+
+	  outerTrees1() {
+	    var results = [];
+	    for (var i = 0; i < 16; i++) {
+	      results.push(new Tree({board: this, pos: [i*32, 0]}));
+	    }
+	    for (i = 0; i < 16; i++) {
+	      results.push(new Tree({board: this, pos: [i*32, 448]}));
+	    }
+
+	    for (i = 0; i < 15; i++) {
+	      results.push(new Tree({board: this, pos: [0, i*32]}));
+	    }
+	    for (i = 0; i < 15; i++) {
+	      results.push(new Tree({board: this, pos: [480, i*32]}));
+	    }
+	    return results;
+
 	  }
 
 	  posCenter() {
@@ -419,6 +482,23 @@
 	    var yyy = Math.floor((this.height / 2) );
 	    return [xxx,yyy];
 
+	  }
+
+	  checkCollisionImmoveables(obj) {
+	    //chxeck for DOORS!!!
+	    for (var i = 0; i < this.immoveables.length; i++) {
+	      var immoveable = this.immoveables[i];
+
+
+	      if (
+	           obj.pos[0] <= (immoveable.pos[0] + (immoveable.width *.3))
+	        && immoveable.pos[0] <= (obj.pos[0] + (obj.width * .6))
+	        && obj.pos[1] <= (immoveable.pos[1] + immoveable.height *.4)
+	        && immoveable.pos[1] <= (obj.pos[1] + obj.width)
+	      ) {return true;}
+
+	    }//end for
+	    return false;
 	  }
 
 	  render() {
@@ -436,6 +516,7 @@
 	    512,
 			512
 		);
+	  this.IMMOVEABLES[this.boardId].forEach((el) => el.render() );
 	  }
 
 
@@ -448,7 +529,68 @@
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	const Moveable = __webpack_require__(4);
+	const Immoveable = __webpack_require__(4);
+
+
+	class Tree extends Immoveable {
+	  constructor (obj) {
+	  super(obj);
+	  this.pos = obj.pos;
+	  this.width = 32;
+	  this.height = 32;
+	  this.image = new Image();
+	  this.image.src =
+	  "./images/background.png";
+	  this.image.onload = () => (this.imageReady = true);
+
+	  }
+
+	  render () {
+	    this.ctx.drawImage(
+	    this.image,
+	    0,
+	    32,
+	    this.width,
+	    this.height,
+	    this.pos[0],
+	    this.pos[1],
+	    this.width,
+	    this.height
+	    );
+	  }
+	}
+
+
+	module.exports = Tree;
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	
+	class Immoveable {
+	  constructor(obj) {
+
+	    this.board = obj.board;
+	    this.boardDimensions = this.board.boardDimensions;
+	    this.ctx = this.board.ctx;
+	    this.canvas = this.board.canvas;
+	    this.done = false;
+	  }
+
+
+
+	} //end class
+
+	module.exports = Immoveable;
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	const Moveable = __webpack_require__(6);
 
 	class Hero extends Moveable {
 	  constructor(obj) {
@@ -457,6 +599,7 @@
 	    this.gotHitSound = new Audio ("./images/242623__reitanna__grunt.wav");
 	    this.dyingSound = new Audio ("./images/101120__robinhood76__01685-harp-groan.wav");
 	    this.life = 5;
+	    this.coins = 0;
 	    this.level = 5;
 	    this.exp = 0;
 	    this.endAttack();
@@ -699,7 +842,7 @@
 
 
 /***/ },
-/* 4 */
+/* 6 */
 /***/ function(module, exports) {
 
 	
@@ -726,6 +869,9 @@
 	    this.animationOn = true;
 	    this.movementOn = true;
 	    this.done = false;
+	    this.blinking = obj.blinking || 0;
+	    if (this.blinking) {console.log("blinking");}
+	    this.hitSomething = false;
 	  }
 
 	  currentSprite() { //this is really just the X offset calc'd
@@ -757,31 +903,33 @@
 	  }
 
 	  updateAnim(elapsed) {
-	    if (this.animationOn) {
-	      this.animTimer += elapsed;
 
-	      if (this.animTimer >= this.animDelay) {
-	        if (this.automover) {
-	          ++this.currentMovement;
+	    this.animTimer += elapsed;
 
-	          if (this.currentMovement >= this.numMovements - 1) {
-	            this.currentMovement = 0;
-	          }
-	          this.facing = (this.movements[this.currentMovement]);
+	    if (this.animTimer >= this.animDelay) {
+	      if (this.blinking) {this.blinking--;}
+	      if (this.automover) {
+	        ++this.currentMovement;
+
+	        if (this.currentMovement >= this.numMovements - 1) {
+	          this.currentMovement = 0;
 	        }
-	        this.animTimer = 0;
-	        ++this.animFrame;
+	        this.facing = (this.movements[this.currentMovement]);
+	      }
+	      this.animTimer = 0;
+	      if (this.animationOn) {++this.animFrame;
 	        if (this.animFrame >= this.animNumFrames) {
 	            this.animFrame = 0;
-	          }
-	      }
+	        }
+
+	        }
 	    }
 	  }
 
 
 
 	  move(elapsed) {
-	    let newPos = this.pos;
+	    let newPos = this.pos.slice(0);
 	    if (this.movementOn) {
 	      var move = (this.speed * (elapsed / 1000));
 	      let speedFactor;
@@ -805,22 +953,25 @@
 	        newPos[1] += Math.round(move * speedFactor * this.MOVES[this.facing][1]);
 	      }
 	    }
+	    if (!(this.board.checkCollisionImmoveables({height: this.height, width: this.width, pos: newPos}))) {
 	    this.pos = newPos;
+	  } else {this.hitSomething = true;}
 	  }
 
 	  render() {
-
-	    this.ctx.drawImage(
-			this.image,
-			this.currentSprite(),
-	    this.spriteYoffset*this.height,
-	    this.width,
-	    this.height,
-			this.pos[0],
-	    this.pos[1],
-	    this.width,
-			this.height
-		);
+	    if (!(this.blinking) || (this.blinking && (this.blinking % 2 !== 0))) {
+	      this.ctx.drawImage(
+	  		this.image,
+	  		this.currentSprite(),
+	      this.spriteYoffset*this.height,
+	      this.width,
+	      this.height,
+	  		this.pos[0],
+	      this.pos[1],
+	      this.width,
+	  		this.height
+	  	  );
+	    }
 	  }
 
 	  preventOutOfBounds() {
@@ -853,10 +1004,10 @@
 
 
 /***/ },
-/* 5 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	const Moveable = __webpack_require__(4);
+	const Moveable = __webpack_require__(6);
 
 	class Fireball extends Moveable {
 	  constructor(obj) {
@@ -927,10 +1078,10 @@
 
 
 /***/ },
-/* 6 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	const Monster = __webpack_require__(7);
+	const Monster = __webpack_require__(9);
 
 	class skullGuy extends Monster {
 	  constructor(obj) {
@@ -938,7 +1089,8 @@
 
 	    this.width = 32;
 	    this.height = 32;
-	    this.hp = 10;
+	    this.maxHp = 10;
+	    this.hp = this.maxHp;
 	    this.Maxspeed = 150;
 	    this.speed = 150;
 	    this.facing = "N";
@@ -989,10 +1141,10 @@
 
 
 /***/ },
-/* 7 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
-	const Moveable = __webpack_require__(4);
+	const Moveable = __webpack_require__(6);
 
 	class Monster extends Moveable {
 	  constructor(obj) {
@@ -1001,6 +1153,7 @@
 	    this.automover = true;
 	    this.getHitSound = new Audio ("./images/146977__jwmalahy__desk-thud.wav");
 	    this.dyingSound = new Audio ("./images/137036__pyrocamancer__beast-death.wav");
+	    this.blinking = 0;
 
 
 	  }
@@ -1008,6 +1161,7 @@
 	  getHit(damage) {
 	    this.getHitSound.play();
 	    this.hp -= damage;
+	    this.blinking = 6;
 	    if (this.hp <= 0) {
 	      this.done = true;
 	      this.dyingSound.play();}
@@ -1021,10 +1175,10 @@
 
 
 /***/ },
-/* 8 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-	const Monster = __webpack_require__(7);
+	const Monster = __webpack_require__(9);
 
 	class Greeny extends Monster {
 	  constructor(obj) {
@@ -1032,7 +1186,8 @@
 
 	    this.width = 32;
 	    this.height = 32;
-	    this.hp = 6;
+	    this.maxHp = 2;
+	    this.hp = this.maxHp;
 	    this.Maxspeed = 150;
 	    this.speed = 150;
 	    this.facing = "N";
@@ -1083,14 +1238,15 @@
 
 
 /***/ },
-/* 9 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	const Moveable = __webpack_require__(4);
+	const Moveable = __webpack_require__(6);
 
 	class Coin extends Moveable {
 	  constructor(obj) {
 	    super(obj);
+	    this.value = obj.value;
 	    this.animationOn = false;
 	    this.pos = obj.pos;
 	    this.automover = false;
@@ -1119,14 +1275,19 @@
 	  }
 
 	  updateAnim(elapsed) {
-	  if (this.dying) {
+
+	  if (this.dying || this.blinking) {
 	    this.animTimer += elapsed;
 	    if (this.animTimer >= this.animDelay) {
 	      this.animTimer = 0;
+	      if (this.blinking) {this.blinking -= 1;}
+	      if (this.dying) {
+
 	      ++this.animFrame;
 	      this.pos[1] -= 3;
 	      if (this.animFrame >= this.animNumFrames) {
 	          this.done = true;}
+	      }
 	    }
 	  }
 	}
@@ -1142,7 +1303,7 @@
 
 
 /***/ },
-/* 10 */
+/* 12 */
 /***/ function(module, exports) {
 
 	const handleInput = function (hero, keysDown) {

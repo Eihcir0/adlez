@@ -7,6 +7,7 @@ class Hero extends Moveable {
     this.gotHitSound = new Audio ("./images/242623__reitanna__grunt.wav");
     this.dyingSound = new Audio ("./images/101120__robinhood76__01685-harp-groan.wav");
     this.life = 5;
+    this.coins = 0;
     this.level = 5;
     this.exp = 0;
     this.endAttack();

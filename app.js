@@ -18,9 +18,13 @@ canvas.height = 480;
 document.body.appendChild(canvas);
 
 var lifeMeter = document.getElementById('score');
+var expMeter = document.getElementById('exp');
+var levelMeter = document.getElementById('level');
+var atkStrMeter = document.getElementById('atkStr');
+var coinMeter = document.getElementById('coins');
 // The main game loop
 
-let game = new Game({ctx: ctx, canvas: canvas, lifeMeter: lifeMeter, boardDimensions:
+let game = new Game({ctx: ctx, canvas: canvas, expMeter: expMeter, atkStrMeter: atkStrMeter, levelMeter: levelMeter, coinMeter: coinMeter, lifeMeter: lifeMeter, boardDimensions:
   [[0,0], [canvas.height, canvas.width]]});
 
 	var keysDown = {};

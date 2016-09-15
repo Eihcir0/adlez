@@ -22,6 +22,9 @@ class Moveable {
     this.animationOn = true;
     this.movementOn = true;
     this.done = false;
+    this.blinking = obj.blinking || 0;
+    if (this.blinking) {console.log("blinking");}
+    this.hitSomething = false;
   }
 
   currentSprite() { //this is really just the X offset calc'd
@@ -53,31 +56,33 @@ class Moveable {
   }
 
   updateAnim(elapsed) {
-    if (this.animationOn) {
-      this.animTimer += elapsed;
 
-      if (this.animTimer >= this.animDelay) {
-        if (this.automover) {
-          ++this.currentMovement;
+    this.animTimer += elapsed;
 
-          if (this.currentMovement >= this.numMovements - 1) {
-            this.currentMovement = 0;
-          }
-          this.facing = (this.movements[this.currentMovement]);
+    if (this.animTimer >= this.animDelay) {
+      if (this.blinking) {this.blinking--;}
+      if (this.automover) {
+        ++this.currentMovement;
+
+        if (this.currentMovement >= this.numMovements - 1) {
+          this.currentMovement = 0;
         }
-        this.animTimer = 0;
-        ++this.animFrame;
+        this.facing = (this.movements[this.currentMovement]);
+      }
+      this.animTimer = 0;
+      if (this.animationOn) {++this.animFrame;
         if (this.animFrame >= this.animNumFrames) {
             this.animFrame = 0;
-          }
-      }
+        }
+
+        }
     }
   }
 
 
 
   move(elapsed) {
-    let newPos = this.pos;
+    let newPos = this.pos.slice(0);
     if (this.movementOn) {
       var move = (this.speed * (elapsed / 1000));
       let speedFactor;
@@ -101,22 +106,25 @@ class Moveable {
         newPos[1] += Math.round(move * speedFactor * this.MOVES[this.facing][1]);
       }
     }
+    if (!(this.board.checkCollisionImmoveables({height: this.height, width: this.width, pos: newPos}))) {
     this.pos = newPos;
+  } else {this.hitSomething = true;}
   }
 
   render() {
-
-    this.ctx.drawImage(
-		this.image,
-		this.currentSprite(),
-    this.spriteYoffset*this.height,
-    this.width,
-    this.height,
-		this.pos[0],
-    this.pos[1],
-    this.width,
-		this.height
-	);
+    if (!(this.blinking) || (this.blinking && (this.blinking % 2 !== 0))) {
+      this.ctx.drawImage(
+  		this.image,
+  		this.currentSprite(),
+      this.spriteYoffset*this.height,
+      this.width,
+      this.height,
+  		this.pos[0],
+      this.pos[1],
+      this.width,
+  		this.height
+  	  );
+    }
   }
 
   preventOutOfBounds() {
