@@ -2,7 +2,8 @@ const Game = require('./js/game.js');
 const handleInput = require('./js/handle_input.js');
 
 // A cross-browser requestAnimationFrame
-// https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
+// https:
+// hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
 
 var requestAnimationFrame =
 	window.requestAnimationFrame ||

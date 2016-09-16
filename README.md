@@ -17,7 +17,7 @@ My Little RPG features:
 ## Wireframes
 This app will consist of a single screen which contains a title, attributes, and a HTML canvas element.
 
-![img](docs/WireFrame.png)
+![img](docs/wireframe.png)
 
 ## Architecture
 This app was created entirely in JavaScript using mostly ES6 syntax.  HTML5 canvas was used for the graphic elements.  No libraries were used.  Everything from collision detection to sprite animation was handrolled from scratch.
