@@ -1,4 +1,3 @@
-My Little RPG is a JavaScript game using HTML5 Canvas.  
-No other libraries were used. 
+My Little RPG is a JavaScript game using HTML5 Canvas written over the course of 4 half-days.
 
-All collission detection, sprite animation, and input handling were handrolled.  
+No other libraries were used.  All collission detection, sprite animation, and input handling were handrolled.  
