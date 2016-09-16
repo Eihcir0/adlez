@@ -17,7 +17,7 @@ My Little RPG features:
 ## Wireframes
 This app will consist of a single screen which contains a title, attributes, and a HTML canvas element.
 
-![img](docs/wireframe.png)
+![img](https://github.com/Eihcir0/my_little_rpg/blob/master/docs/wirefame.png)
 
 ## Architecture
 This app was created entirely in JavaScript using mostly ES6 syntax.  HTML5 canvas was used for the graphic elements.  No libraries were used.  Everything from collision detection to sprite animation was handrolled from scratch.
@@ -47,6 +47,7 @@ function main() {
 
     lastTime = Date.now();
     requestAnimationFrame(main);
+
 ```
 
 
@@ -55,6 +56,7 @@ function main() {
 One of the many challenges along the way was attributable to the fact that the sprite sheet which was used had 32px sprites but the sprites for sword swinging were 3 times as large.  To account for this, offsets were passed to the render function.
 
 ```
+
 render() {
   if (this.attacking) {
     this.ctx.drawImage(
@@ -69,9 +71,13 @@ render() {
     this.width*3,
     this.height*3
     );
-    ```
+   }
+  }
+    
+```
 
 ### Move() function
+
 ```
 
 move(elapsed) {
@@ -90,19 +96,22 @@ move(elapsed) {
     }
   }
 
+
 ```
+
 
 ### Class Inheritance Structure
 
 To group functions common to all classes, I created a Moveable class and an Immoveable class.  This allowed me to DRY up my codebase and functions common to all moving objects.
 
 
-Parent class    | Children | Comments
+
+Parent class    | Children  | Comments
 ----------------|-----------|-----------------------
-App             | --   | Contains initial game setup logic.  Instantiates new Game
-Game        | --    | Instantiates hero and quadrants. Contains main game loop.  Updates monsters in all quadrants but on renders quadrant player is on.
-Quadrant | --    | Instantiates board.  Handles collision checking logic.
-Board | --    | Instantiates and tracks immoveable objects and doorways to other quadrants.
-Moveable | Hero, Monsters    | Handles updates for movement and animation for all moveable objects.
+App             | --        | Contains initial game setup logic.  Instantiates new Game
+Game            | --        | Instantiates hero and quadrants. Contains main game loop.  Updates monsters in all quadrants but on renders quadrant player is on.
+Quadrant        | --        | Instantiates board.  Handles collision checking logic.
+Board           | --        | Instantiates and tracks immoveable objects and doorways to other quadrants.
+Moveable        | Hero, Monsters    | Handles updates for movement and animation for all moveable objects.
 Monster | Greeny, SkullGuy | Handles all monster damage
 Immoveable | Tree, Door | Doors know where they go and the position of the Hero when entering the new quadrant.
