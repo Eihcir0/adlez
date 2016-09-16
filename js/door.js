@@ -1,33 +1,24 @@
 const Immoveable = require('./immoveable.js');
 
 
-class Tree extends Immoveable {
+class Door extends Immoveable {
   constructor (obj) {
   super(obj);
   this.pos = obj.pos;
-  this.width = 32;
-  this.height = 32;
-  this.image = new Image();
-  this.image.src =
-  "./images/background.png";
-  this.image.onload = () => (this.imageReady = true);
-
+  this.newHeroPos = obj.newHeroPos;
+  this.width = obj.width;
+  this.height = obj.height;
+  this.next = obj.next;
+  this.from = obj.from;
+  this.ctx = obj.ctx;
+  this.type = "door";
   }
 
-  render () {
-    this.ctx.drawImage(
-    this.image,
-    0,
-    32,
-    this.width,
-    this.height,
-    this.pos[0],
-    this.pos[1],
-    this.width,
-    this.height
-    );
+  render() {
+  	this.ctx.fillStyle = "rgb(0,0,0)";
+  	this.ctx.fillRect(this.pos[0], this.pos[1], this.width, this.height);
   }
-}
+}//end class
 
 
-module.exports = Tree;
+module.exports = Door;

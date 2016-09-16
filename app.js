@@ -24,6 +24,7 @@ var atkStrMeter = document.getElementById('atkStr');
 var coinMeter = document.getElementById('coins');
 // The main game loop
 
+
 let game = new Game({ctx: ctx, canvas: canvas, expMeter: expMeter, atkStrMeter: atkStrMeter, levelMeter: levelMeter, coinMeter: coinMeter, lifeMeter: lifeMeter, boardDimensions:
   [[0,0], [canvas.height, canvas.width]]});
 

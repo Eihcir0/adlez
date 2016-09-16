@@ -14,7 +14,6 @@ class Fireball extends Moveable {
     this.height = 64;
 
     this.speed = 500;
-    this.Maxspeed = 500;
     this.animSet = 0;
     this.spriteYoffset = 0;
     this.animFrame = 0;

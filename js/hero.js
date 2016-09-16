@@ -6,22 +6,27 @@ class Hero extends Moveable {
     this.attackSound = new Audio("./images/209121__lukesharples__sword-swipe11.wav");
     this.gotHitSound = new Audio ("./images/242623__reitanna__grunt.wav");
     this.dyingSound = new Audio ("./images/101120__robinhood76__01685-harp-groan.wav");
-    this.life = 5;
+    this.levelUpSound = new Audio ("./images/346425__soneproject__ecofuture3.wav");
+    this.twerkSound = new Audio ("./images/miley.mp3");
+    this.maxLife = 30;
+    this.life = 30;
     this.coins = 0;
-    this.level = 5;
+    this.level = 1;
     this.exp = 0;
     this.endAttack();
     this.lastAttack = Date.now();
     this.justHit = false;
     this.justHitTimer = 0;
     this.newFireball = false;
-    this.lastFireball = Date.now();
-    this.fireballDelay = 2000;
+    this.lastFireball = 0;
+    this.fireballDelay = 1000;
+    this.fireballSpeed = 1000;
     this.attackDelay = 200;
     this.name = "HERO";
     this.width = 64;
     this.height = 64;
     this.shakingAss = false;
+    this.twerkStartTime = 0;
     this.atkDamage = 1;
     this.directHit = true;
     this.speed = 0;
@@ -42,8 +47,35 @@ class Hero extends Moveable {
     this.image.onload = () => (this.imageReady = true);
     this.facing = "S";
     this.updateAnimSet();
-
+    this.type = "hero";
   }
+
+  updateHero() {
+    this.updateLevel();
+  }
+
+  updateLevel() {
+    var oldLevel = this.level;
+    if (this.exp > 9000) {
+      this.level = 2;
+      this.maxLife = 40;
+      this.life = 40;}
+    if (this.exp > 20000) {
+      this.level = 3;
+      this.maxLife = 50;
+      this.life = 50;}
+    if (this.level > oldLevel) {this.levelUp();}
+  }
+
+  levelUp() {
+    this.levelUpSound.play();
+
+    if (this.level>3) {
+      this.fireballDelay = 0;
+      this.fireballSpeed = 500;
+    }
+  }
+
 
   stop() {
     if (!(this.attacking)) {
@@ -56,27 +88,33 @@ class Hero extends Moveable {
 
 
   shakeAssOn() {
+    this.twerkSound.play();
     this.shakingAss = true;
     this.facing = "N";
     this.updateAnimSet();
     this.animDelay = 10;
     this.movementOn = false;
     this.animationOn = true;
+    this.twerkStartTime = Date.now();
+
 
 
   }
 
   shakeAssOff() {
+    this.twerkSound.pause();
     this.shakingAss = false;
     this.facing = "S";
     this.updateAnimSet(); //DRY THIS UP LATER?  based on facing?
-    this.animDelay = 200;
+    this.animDelay = 40;
     this.movementOn = true;
     this.automover = false;
   }
 
   getHit() {
-    if (this.life === 1) {
+    this.life -= 10;
+    if (this.life <= 0) {
+        this.life =0;
         this.gotHitSound.play();
         this.dyingSound.play();
         this.stop();
@@ -93,7 +131,7 @@ class Hero extends Moveable {
         this.speed = 0;
       } else {
         this.gotHitSound.play();
-        this.life -= 1;
+        this.life -= 10;
         this.justHit = true;
       }
 
@@ -200,8 +238,12 @@ class Hero extends Moveable {
 
       if (this.animTimer >= this.animDelay) {
         this.animTimer = 0;
+        if (this.shakingAss) {
+          this.life += ((Date.now() - this.twerkStartTime));
+            this.life = Math.min(this.life, this.maxLife);
+          }
         ++this.animFrame;
-        if (this.animFrame > 3 && this.attacking) {this.attackApex = true;console.log("APEX!");}
+        if (this.animFrame > 3 && this.attacking) {this.attackApex = true;}
         if (this.animFrame >= this.animNumFrames) {
           if (this.dying) {
             this.animFrame = 5;

@@ -1,7 +1,6 @@
 
 class Moveable {
   constructor(obj) {
-
     this.board = obj.board;
     this.boardDimensions = this.board.boardDimensions;
     this.MOVES = {
@@ -23,7 +22,6 @@ class Moveable {
     this.movementOn = true;
     this.done = false;
     this.blinking = obj.blinking || 0;
-    if (this.blinking) {console.log("blinking");}
     this.hitSomething = false;
   }
 
@@ -50,6 +48,7 @@ class Moveable {
   }
 
   update(elapsed) {
+    if (this.type === 'hero') {this.updateHero();}
     this.updateAnim(elapsed);
     this.move(elapsed);
 
@@ -106,13 +105,17 @@ class Moveable {
         newPos[1] += Math.round(move * speedFactor * this.MOVES[this.facing][1]);
       }
     }
-    if (!(this.board.checkCollisionImmoveables({height: this.height, width: this.width, pos: newPos}))) {
-    this.pos = newPos;
-  } else {this.hitSomething = true;}
-  }
+    if (!(this.board.checkCollisionImmoveables(this, newPos))) {
+      this.hitSomething = false;
+      this.pos = newPos;
+  } else {
+      this.hitSomething = true;
+      }
+  }//end move()
 
   render() {
     if (!(this.blinking) || (this.blinking && (this.blinking % 2 !== 0))) {
+      if (this.name === 'FIREBALL') {console.log(this);}
       this.ctx.drawImage(
   		this.image,
   		this.currentSprite(),
