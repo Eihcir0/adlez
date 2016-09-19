@@ -622,9 +622,8 @@
 	    for (i = 0; i < 15; i++) {
 	      results.push(new Tree({board: this, pos: [480, i*32]}));
 	    }
-	    
-	    results.push(new Door({newHeroPos: [null,20], board: this, pos: [206,430], width: 100, height: 43, ctx: this.ctx, next: 1, from: 2}));
 
+	    results.push(new Door({newHeroPos: [null,20], board: this, pos: [206,440], width: 100, height: 250, ctx: this.ctx, next: 1, from: 2}));
 	    return results;
 
 	  }
@@ -787,7 +786,7 @@
 	    this.gotHitSound = new Audio ("./images/242623__reitanna__grunt.wav");
 	    this.dyingSound = new Audio ("./images/101120__robinhood76__01685-harp-groan.wav");
 	    this.levelUpSound = new Audio ("./images/346425__soneproject__ecofuture3.wav");
-	    this.twerkSound = new Audio ("./images/miley.mp3");
+	    this.twerkSound = new Audio ("./images/thoukick.wav");
 	    this.maxLife = 30;
 	    this.life = 30;
 	    this.coins = 0;
