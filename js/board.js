@@ -62,9 +62,8 @@ class Board {
     for (i = 0; i < 15; i++) {
       results.push(new Tree({board: this, pos: [480, i*32]}));
     }
-    
-    results.push(new Door({newHeroPos: [null,20], board: this, pos: [206,430], width: 100, height: 43, ctx: this.ctx, next: 1, from: 2}));
 
+    results.push(new Door({newHeroPos: [null,20], board: this, pos: [206,440], width: 100, height: 250, ctx: this.ctx, next: 1, from: 2}));
     return results;
 
   }

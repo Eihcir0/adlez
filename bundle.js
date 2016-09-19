@@ -48,7 +48,8 @@
 	const handleInput = __webpack_require__(14);
 
 	// A cross-browser requestAnimationFrame
-	// https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
+	// https:
+	// hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
 
 	var requestAnimationFrame =
 		window.requestAnimationFrame ||
