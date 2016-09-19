@@ -8,6 +8,7 @@ class Hero extends Moveable {
     this.dyingSound = new Audio ("./images/101120__robinhood76__01685-harp-groan.wav");
     this.levelUpSound = new Audio ("./images/346425__soneproject__ecofuture3.wav");
     this.twerkSound = new Audio ("./images/thoukick.wav");
+    
     this.maxLife = 30;
     this.life = 30;
     this.coins = 0;
