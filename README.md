@@ -1,5 +1,5 @@
-# My Little RPG
-# [Live Link](https://eihcir0.github.io/my_little_rpg)
+# ADLEZ
+# [Live Link](https://eihcir0.github.io/adlez)
 ## Background
 
 Kill Monsters!  Find Gold!  Level up!
@@ -7,7 +7,7 @@ Kill Monsters!  Find Gold!  Level up!
 Inspired by games like Zelda and other RPG games, My Little RPG is a fun project completed over the course of 4 evenings and my first experience working with sprite animation.  
 
 ## Features
-My Little RPG features:
+Adlez features:
 
 1. A character which can be controlled with the arrow keys along with space bar and S.
 1. Collision detection between all moveable and non-moveable objects and the edge of the canvas
@@ -73,7 +73,7 @@ render() {
     );
    }
   }
-    
+
 ```
 
 ### Move() function
